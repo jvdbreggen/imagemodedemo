@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RHEL Image Mode Demo</title>
+</head>
+<body>
+    <h1><span style="color: red;"><br />Welcome to the first deployment of the <span style="color: #99cc00;">Base Image</span> in Image Mode for RHEL.</span></h1>
+</body>
+</html>
