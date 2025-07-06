@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RHEL Image Mode Demo</title>
+</head>
+<body>
+    <h1>Update Image</h1>
+    <p/>
+    <h1><span style="color: blue;"><br />This is our new <span style="color: #ffffff; background-color: #000000;">UPDATE</span> of the <span style="color: #990099;">Update Image</span> in Image Mode for RHEL.</span></h1>
+</body>
+</html>
