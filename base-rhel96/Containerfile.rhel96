@@ -13,7 +13,7 @@ EOF
 COPY html/index.html /usr/share/www/html/index.html
 COPY html/style.css /usr/share/www/html/style.css
 COPY html/osrelease.js /usr/share/www/html/osrelease.js
-COPY --from=build /etc/os-release /usr/share/www/html/os-release
+RUN cp /etc/os-release /usr/share/www/html/os-release
 
 RUN systemctl enable httpd 
 
