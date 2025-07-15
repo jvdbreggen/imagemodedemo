@@ -1,5 +1,9 @@
 FROM registry.redhat.io/rhel9/rhel-bootc:9.6
 
+RUN dnf -y install mkpasswd
+RUN pass=$(mkpasswd --method=SHA-512 --rounds=4096 redhat) && useradd -m -G wheel bootc-user -p $pass
+#RUN echo "%wheel        ALL=(ALL)       NOPASSWD: ALL" > /etc/sudoers.d/wheel-sudo
+
 RUN dnf -y install httpd
 
 ADD etc/ /etc
