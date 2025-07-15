@@ -8,4 +8,5 @@ RUN dnf -y install httpd && \
     sed -ie 's,/var/www,/usr/share/www,' /etc/httpd/conf/httpd.conf
 COPY files/index.html /usr/share/www/html/index.html
 COPY files/style.css /usr/share/www/html/style.css
+RUN cp /etc/os-release /usr/share/www/html/os-release
 EXPOSE 80
