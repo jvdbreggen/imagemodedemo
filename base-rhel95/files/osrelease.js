@@ -1,6 +1,6 @@
 const btn = document.querySelector('button');
 const main = document.querySelector('.container');
-const url = 'file:///etc/os-release';
+const url = 'os-release';
 //console.log(btn);
 btn.onclick = reqData;
 
