@@ -1,0 +1,7 @@
+FROM quay.io/jvdbreggen/corp-rhel:latest
+
+ADD html/ /usr/share/www/html
+
+ADD etc/ /etc
+
+EXPOSE 80
