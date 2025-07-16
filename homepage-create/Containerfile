@@ -4,4 +4,6 @@ ADD html/ /usr/share/www/html
 
 ADD etc/ /etc
 
+RUN cp /etc/os-release /usr/share/www/html/os-release
+
 EXPOSE 80
