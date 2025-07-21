@@ -1,4 +1,4 @@
-# FROM quay.io/jvdbreggen/corp-rhel:latest
+# FROM quay.io/jvdbreggen/base-rhel:latest
 FROM quay.io/jvdbreggen/homepage:latest
 
 ADD html/ /usr/share/www/html
