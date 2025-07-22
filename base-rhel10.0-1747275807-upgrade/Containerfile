@@ -1,4 +1,4 @@
-FROM quay.io/jvdbreggen/corp-rhel:10.0
+FROM quay.io/jvdbreggen/base-rhel:10.0
 
 RUN dnf -y upgrade --refresh && \
     dnf clean all
