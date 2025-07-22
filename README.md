@@ -88,7 +88,7 @@ cd $HOME/imagemodedemo/base-rhel96
 ```
 
 ```bash
-sudo podman build -t quay.io/$QUAY_USER/base-rhel:latest -t quay.io/$QUAY_USER/base-rhel:rhel9.6 -f Containerfile.rhel95
+podman build -t quay.io/$QUAY_USER/base-rhel:latest -t quay.io/$QUAY_USER/base-rhel:rhel9.6 -f Containerfile
 ```
 
 If we want to test our image we can run it in a container.
@@ -173,12 +173,142 @@ Finally for this section run the bootc status command to view the booted image r
 sudo bootc status
 ```
 
->Booted image: quay.io/jvdbreggen/base-rhel:rhel9.6 \
+>Booted image: quay.io/$QUAY_USER/base-rhel:rhel9.6 \
 >Digest: sha256:a48811e05........... \
 >Version: 9.6 (2025-07-21 13:10:35.887718188 UTC)
 
 ## Next steps, now in commands and then build with text and fix the sequence diagram based on the flow
 
-```bash
+Builder machine:
 
+```bash
+cd ../homepage-create
+
+podman build -t quay.io/$QUAY_USER/homepage:1 -t quay.io/$QUAY_USER/homepage:latest -f Containerfile
+
+podman push quay.io/$QUAY_USER/homepage:1 && podman push quay.io/$QUAY_USER/homepage:latest
 ```
+
+Homepage vm:
+Login to the VM using ssh
+
+```bash
+QUAY_USER="your quay.io username not the email address"
+sudo bootc switch quay.io/$QUAY_USER/homepage:latest
+sudo bootc status
+```
+>  Staged image: quay.io/$QUAY_USER/homepage:latest \
+        Digest:  sha256:2be7b1...... \
+       Version: 9.6 (2025-07-21 15:43:03.624175287 UTC) \
+       \
+● Booted image: quay.io/$QUAY_USER/base-rhel:rhel9.6 \
+        Digest: sha256:a48811...... \
+       Version: 9.6 (2025-07-21 13:10:35.887718188 UTC)
+
+check homepage `curl localhost`
+
+```bash
+sudo reboot
+```
+
+ssh login
+
+```bash
+VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) && ssh bootc-user@$VM_IP
+curl localhost
+```
+
+in the builder machine in the base-rhel10.0 directory
+
+```bash
+cd ../base-rhel10.0
+
+podman build -t quay.io/$QUAY_USER/base-rhel:latest -t quay.io/$QUAY_USER/base-rhel:rhel10.0 -f Containerfile
+
+podman push quay.io/$QUAY_USER/base-rhel:latest && podman push quay.io/$QUAY_USER/base-rhel:rhel10.0
+```
+
+In the VM
+
+```bash
+QUAY_USER="your quay.io username not the email address"
+[bootc-user@localhost ~]$ sudo bootc switch quay.io/$QUAY_USER/base-rhel:latest
+```
+
+The homepage is lost, we need to roll back
+
+```bash
+sudo bootc status
+```
+
+>● Booted image: quay.io/$QUAY_USER/base-rhel:latest \
+    Digest:  sha256:7c46d6....... \
+    Version: 10.0 (2025-07-21 16:04:36.100285429 UTC) \
+\
+  Rollback image: quay.io/$QUAY_USER/homepage:latest \
+          Digest: sha256:2be7b1...... \
+         Version: 9.6 (2025-07-21 15:43:03.624175287 UTC)
+
+```bash
+sudo bootc rollback
+sudo reboot
+sudo bootc status
+```
+
+>● Booted image: quay.io/jvdbreggen/homepage:latest\
+        Digest: sha256:2be7b1...... \
+       Version: 9.6 (2025-07-21 15:43:03.624175287 UTC) \
+ \
+  Rollback image: quay.io/jvdbreggen/base-rhel:latest \
+          Digest: sha256:7c46d6...... \
+         Version: 10.0 (2025-07-21 16:04:36.100285429 UTC)
+
+we need to do this another way
+in the image builder machine
+our container file already points to the base-rhel:latest image in the repo. we need to do an update
+
+```bash
+cd ../homepage-create
+podman build -t quay.io/$QUAY_USER/homepage:2 -t quay.io/$QUAY_USER/homepage:latest -f Containerfile
+podman push quay.io/$QUAY_USER/homepage:1 && podman push quay.io/$QUAY_USER/homepage:latest
+```
+
+in the homepage VM
+
+```bash
+sudo bootc upgrage --check
+```
+
+>Update available for: docker://quay.io/jvdbreggen/homepage:latest \
+  Version: 10.0 \
+  Digest: sha256:0c5416...... \
+Total new layers: 77    Size: 885.4 MB \
+Removed layers:   76    Size: 1.4 GB \
+Added layers:     76    Size: 885.4 MB
+
+Apply the update
+Only a few layers, I thought we upgrade to RHEL 10?
+
+```bash
+sudo bootc upgrade
+sudo bootc status
+```
+
+>  Staged image: quay.io/$QUAY_USER/homepage:latest \
+        Digest: sha256:0c5416...... \
+       Version: 10.0 (2025-07-21 17:25:47.229186615 UTC) \
+ \
+● Booted image: quay.io/$QUAY_USER/homepage:latest \
+        Digest: sha256:2be7b1...... \
+       Version: 9.6 (2025-07-21 15:43:03.624175287 UTC) \
+ \
+  Rollback image: quay.io/$QUAY_USER/base-rhel:latest \
+          Digest: sha256:7c46d6...... \
+         Version: 10.0 (2025-07-21 16:04:36.100285429 UTC)
+
+```bash
+sudo reboot
+```
+
+This is to show how we update the base OS on an existing deployment. Usually this will be done during an application, or in this case, a homepage update.
+Let's rollback again and then apply a new homepage whereby the RHEL 10 OS upgrade will automatically be pulled along with the update using the latest base-rhel image in the repository.
