@@ -59,6 +59,7 @@ HomepageV4->>HomepageV5: Upgrade to v5
 ```
 
 ## Set the environment
+
 Setup of the terminal for building Image Mode images that we are going to push to the registry.
 In this workshop we will be pushing to Red Hat Quay.
 
@@ -75,6 +76,7 @@ sudo cp /run/user/1000/containers/auth.json /run/containers/0/auth.json #The use
 ```
 
 ## Build the demo base image for RHEL
+
 The first steps we will build our base (golden) image that we are going to use within the workshop. We will start with RHEL 9.6 and during the workshop update to RHEL 10.0.
 
 We will name our base (golden) image `base-rhel:rhel9.6` and also tag it as our latest rhel base image as `base-rhel:latest`.
@@ -83,6 +85,7 @@ We will then deploy a new virtual machine named `homepage` as this will be our n
 Commands to build the RHEL 9.6 base image.
 
 Change to the folder where you have cloned this repo
+
 ```bash
 cd $HOME/imagemodedemo/base-rhel96
 ```
@@ -108,7 +111,7 @@ podman push quay.io/$QUAY_USER/base-rhel:latest
 
 Now we are ready to create the virtual machine disk image that we are going to import into our new VM.
 
-In some cases the podman command is unable to initially pull the image from the registry and returns an error that you have to pull the image from the registry before building the disk. Use 
+In some cases the podman command is unable to initially pull the image from the registry and returns an error that you have to pull the image from the registry before building the disk. Use a pull command to syncronise the local images.
 
 ```bash
 sudo podman pull quay.io/$QUAY_USER/base-rhel:rhel9.6
@@ -197,7 +200,8 @@ QUAY_USER="your quay.io username not the email address"
 sudo bootc switch quay.io/$QUAY_USER/homepage:latest
 sudo bootc status
 ```
->  Staged image: quay.io/$QUAY_USER/homepage:latest \
+
+> Staged image: quay.io/$QUAY_USER/homepage:latest \
         Digest:  sha256:2be7b1...... \
        Version: 9.6 (2025-07-21 15:43:03.624175287 UTC) \
        \
@@ -286,7 +290,7 @@ Total new layers: 77    Size: 885.4 MB \
 Removed layers:   76    Size: 1.4 GB \
 Added layers:     76    Size: 885.4 MB
 
-Apply the update
+Apply the update - not working sshd broken after reboot
 Only a few layers, I thought we upgrade to RHEL 10?
 
 ```bash
@@ -294,7 +298,7 @@ sudo bootc upgrade
 sudo bootc status
 ```
 
->  Staged image: quay.io/$QUAY_USER/homepage:latest \
+> Staged image: quay.io/$QUAY_USER/homepage:latest \
         Digest: sha256:0c5416...... \
        Version: 10.0 (2025-07-21 17:25:47.229186615 UTC) \
  \
