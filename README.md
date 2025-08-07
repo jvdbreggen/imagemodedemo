@@ -119,7 +119,7 @@ sudo podman pull quay.io/$QUAY_USER/demolab-rhel:9.6
 ```
 
 ```bash
-sudo podman run \ 
+sudo podman run \
 --rm \
 -it \
 --privileged \
@@ -127,10 +127,10 @@ sudo podman run \
 --security-opt label=type:unconfined_t \
 -v $(pwd)/config.toml:/config.toml:ro \
 -v $(pwd):/output \
--v /var/lib/containers/storage:/var/lib/containers/storage registry.redhat.io/rhel9/bootc-image-builder:9.6 \
+-v /var/lib/containers/storage:/var/lib/containers/storage registry.redhat.io/rhel9/bootc-image-builder:latest \
 --type qcow2 \
 --tls-verify=false \
-quay.io/$QUAY_USER/demolab-rhel:9.6
+quay.io/$QUAY_USER/demolab-rhel:latest
 ```
 
 We will copy the new disk image to the libvirt images pool.
