@@ -7,15 +7,17 @@ Draft container files, index.html, and config files to get an Image Mode worksho
 
 ```mermaid
 graph TD;
-    demolab96([demolab-rhel:9.6])-.->pushrhel96@{ shape: notch-rect, label: "Push RHEL 9.6 base image" }-->
+    demolab96([demolab-rhel:9.6])-.->pushrhel96@{ shape: notch-rect, label: "Push RHEL 9.6 base image" };
+    createqcow2[Convert demolab-rhel:9.6 to the homepage VM]-->homepagevm1;
+    pushrhel96-->createqcow2;
     homepagevm1[deploy Homepage VM]-->homepageVM;
     homepagecreate([homepage-create])-.->pushhomepagecreate@{ shape: notch-rect, label: "Push homepage:1" };
-    pushhomepagecreate-->homepageVM;
+    pushhomepagecreate-->switchhomepage[Switch to the homepage:latest repository in the VM]
+    switchhomepage--> homepageVM;
     demolab10([demolab-rhel10.0])-->pushrhel10@{ shape: notch-rect, label: "Push demolab-rhel:10.0" };
     homepageupdate[homepage-update]-.->pushhomepageupdate@{ shape: notch-rect, label: "Push homepage:2" }
     pushrhel10-->homepageupdate;
     pushhomepageupdate-->homepageVM;
-
 ```
 
 The following diagram will be updated as I work through the workflow.
@@ -329,3 +331,12 @@ sudo reboot
 
 This is to show how we update the base OS on an existing deployment. Usually this will be done during an application, or in this case, a homepage update.
 Let's rollback again and then apply a new homepage whereby the RHEL 10 OS upgrade will automatically be pulled along with the update using the latest demolab-rhel image in the repository.
+
+## Notes
+
+Installing httpd on a bare RHEL os server you need to create the dirs in /var
+
+```bash
+RUN sudo mkdir -p /var/log/httpd
+RUN sudo mkdir -p /var/lib/httpd
+```
