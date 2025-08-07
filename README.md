@@ -7,57 +7,23 @@ Draft container files, index.html, and config files to get an Image Mode worksho
 
 ```mermaid
 graph TD;
-    demolab96([demolab-rhel:9.6])-.->pushrhel96@{ shape: notch-rect, label: "Push RHEL 9.6 base image" }-->
-    homepagevm1[deploy Homepage VM]-->homepageVM;
+    demolab96([demolab-rhel:9.6])-.->pushrhel96@{ shape: notch-rect, label: "Push RHEL 9.6 base image" };
+    homepagevm1[deploy Homepage VM];
+    createqcow2[Create qcow2 image for homepage]-->homepagevm1;
+    pushrhel96-->createqcow2;
+    homepagevm1-->homepageVM;
     homepagecreate([homepage-create])-.->pushhomepagecreate@{ shape: notch-rect, label: "Push homepage:1" };
-    pushhomepagecreate-->homepageVM;
+    pushhomepagecreate-->switchhomepage[Switch VM to homepage:latest];
+    switchhomepage-->homepageVM;
     demolab10([demolab-rhel10.0])-->pushrhel10@{ shape: notch-rect, label: "Push demolab-rhel:10.0" };
     homepageupdate[homepage-update]-.->pushhomepageupdate@{ shape: notch-rect, label: "Push homepage:2" }
     pushrhel10-->homepageupdate;
-    pushhomepageupdate-->homepageVM;
-
+    pushhomepageupdate-->upgradeVM[bootc upgrade in the VM];
+    upgradeVM-->homepageVM;
 ```
 
-The following diagram will be updated as I work through the workflow.
+<!-- The following diagram will be updated as I work through the workflow. -->
 
-```mermaid
-sequenceDiagram
-   participant BaseRHEL96 as demolab-rhel96
-   participant BaseRHEL100 as demolab-rhel100 
-   participant HomepageV1 as homepagev1 
-   participant HomepageV2 as homepagev2 
-   participant HomepageV3 as homepagev3 
-   participant HomepageV4 as homepagev4 
-   participant HomepageV5 as homepagev5 
-   participant HomepageCreate as homepage-create 
-   participant HomepageUpdate as homepage-update
-
-%% Begin sequence
-Note over BaseRHEL96,HomepageV1: Initial deployment of homepage Virtual Machine from RHEL 9.6 base image
-BaseRHEL96->>HomepageV1: Deploy homepage v1
-
-Note over HomepageV1,HomepageV2: Upgrade homepage to v2
-HomepageV1->>HomepageV2: Upgrade to v2
-
-Note over HomepageCreate,HomepageV2: New homepage creation triggers v2 deployment
-HomepageCreate->>HomepageV2: Create homepage v2
-
-Note over HomepageV2,HomepageV3: Upgrade homepage to v3
-HomepageV2->>HomepageV3: Upgrade to v3
-
-Note over CorpRHEL100,HomepageV3: Deploy homepage v3 from RHEL 10.0 base image
-CorpRHEL100->>HomepageV3: Deploy homepage v3
-
-Note over HomepageV3,HomepageV4: Upgrade homepage to v4
-HomepageV3->>HomepageV4: Upgrade to v4
-
-Note over HomepageUpdate,HomepageV4: Update homepage triggers v4 deployment
-HomepageUpdate->>HomepageV4: Update homepage v4
-
-Note over HomepageV4,HomepageV5: Upgrade homepage to v5
-HomepageV4->>HomepageV5: Upgrade to v5
-
-```
 
 ## Set the environment
 
