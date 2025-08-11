@@ -31,7 +31,7 @@ graph TD;
 sequenceDiagram
     %% Actors
     participant Demolab96 as demolab-rhel:9.6-1747275992
-    participant PushRHEL96 as Push RHEL 9.6-1747275992 base image
+    participant PushRHEL96 as Push RHEL 9.6-1747275992<br/>base image
     participant HomepageVM1 as Deploy Homepage VM
     participant Demolab96Upgrade as demolab-rhel:9.6-upgrade
     participant PushRHEL96Upgrade as Push RHEL 9.6 upgrade
@@ -60,13 +60,13 @@ sequenceDiagram
 
     %% Homepage creation
     VMRHEL96UpgradeLatest-->>HomepageCreate: Container file FROM the demolab-rhel:latest<br/>that will upgrade rhel and have the new homepage
-    HomepageCreate-->>PushHomepageCreate: Build the homepage:1 image including an upgrade the RHEL 9.6 latest
-    PushHomepageCreate->>HomepageVM: Upgrade the homepage VM with the new homepage:1 and reboot
+    HomepageCreate-->>PushHomepageCreate: Build the homepage:1 image<br/>including an upgrade the RHEL 9.6 latest
+    PushHomepageCreate->>HomepageVM: Upgrade the homepage VM with the new<br/>homepage:1 and reboot
 
     %% RHEL 10 path
-    Demolab10-->>PushRHEL10: Create a new RHEL 10.0 image and push as demolab-rhel:10.0 and demolab-rhel:latest
-    PushRHEL10-->>HomepageUpdate: push demolab-rhel:10.0 as the latest image and prepare the homepage update Containre file
-    HomepageUpdate-->>PushHomepageUpdate: Build the new homepage:2 image with the new RHEL 10.0 latest and a homepage update
+    Demolab10-->>PushRHEL10: Create a new RHEL 10.0 image<br/>and push as demolab-rhel:10.0<br/>and demolab-rhel:latest
+    PushRHEL10-->>HomepageUpdate: push demolab-rhel:10.0 as the<br/>latest image and prepare<br/>the homepage update Containre file
+    HomepageUpdate-->>PushHomepageUpdate: Build the new homepage:2<br/>image with the new<br/>RHEL 10.0 latest and a homepage update
     PushHomepageUpdate->>HomepageVM: Deploy homepage:2 using bootc upgrade
 
     %% Tooltips and click events for extra detail
