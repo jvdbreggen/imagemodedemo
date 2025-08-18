@@ -7,61 +7,85 @@ Draft container files, index.html, and config files to get an Image Mode worksho
 
 ```mermaid
 graph TD;
-    demolab96([demolab-rhel:9.6])-.->pushrhel96@{ shape: notch-rect, label: "Push RHEL 9.6 base image" };
-    createqcow2[Convert demolab-rhel:9.6 to the homepage VM]-->homepagevm1;
-    pushrhel96-->createqcow2;
-    homepagevm1[deploy Homepage VM]-->homepageVM;
-    homepagecreate([homepage-create])-.->pushhomepagecreate@{ shape: notch-rect, label: "Push homepage:1" };
-    pushhomepagecreate-->switchhomepage[Switch to the homepage:latest repository in the VM]
-    switchhomepage--> homepageVM;
-    demolab10([demolab-rhel10.0])-->pushrhel10@{ shape: notch-rect, label: "Push demolab-rhel:10.0" };
+    demolab96([1.demolab-rhel:9.6-1747275992])-.->pushrhel96-1747275992@{ shape: notch-rect, label: "2.Push RHEL 9.6-1747275992 base image" }-->
+    homepagevm1[3.deploy Homepage VM]-->homepageVM;
+
+    demolab96-upgrade-.->pushrhel96-upgrade@{ shape: notch-rect, label: "Push RHEL 9.6 upgrade" };
+    pushrhel96-upgrade-->vmrhel96upgradelatest;
+    vmrhel96upgradelatest-->homepageVM;
+    vmrhel96upgradelatest-->rollback-->homepagevm1;
+    homepageVM-->rollback;
+
+    homepagecreate([homepage-create]);
+    pushrhel96-upgrade-->homepagecreate;
+    homepagecreate-.->pushhomepagecreate@{ shape: notch-rect, label: "Push homepage:1" };
+    pushhomepagecreate-->homepageVM;
+
+    demolab10([demolab-rhel10.0])-.->pushrhel10@{ shape: notch-rect, label: "Push demolab-rhel:10.0" };
     homepageupdate[homepage-update]-.->pushhomepageupdate@{ shape: notch-rect, label: "Push homepage:2" }
     pushrhel10-->homepageupdate;
     pushhomepageupdate-->homepageVM;
 ```
 
-The following diagram will be updated as I work through the workflow.
-
 ```mermaid
 sequenceDiagram
-   participant BaseRHEL96 as demolab-rhel96
-   participant BaseRHEL100 as demolab-rhel100 
-   participant HomepageV1 as homepagev1 
-   participant HomepageV2 as homepagev2 
-   participant HomepageV3 as homepagev3 
-   participant HomepageV4 as homepagev4 
-   participant HomepageV5 as homepagev5 
-   participant HomepageCreate as homepage-create 
-   participant HomepageUpdate as homepage-update
+    %% Actors
+    participant Demolab96 as demolab-rhel:9.6-1747275992
+    participant PushRHEL96 as Push RHEL 9.6-1747275992<br/>base image
+    participant HomepageVM1 as Deploy Homepage VM
+    participant Demolab96Upgrade as demolab-rhel:9.6-upgrade
+    participant PushRHEL96Upgrade as Push RHEL 9.6 upgrade
+    participant VMRHEL96UpgradeLatest as VM RHEL 9.6 upgrade latest
+    participant Rollback as Rollback
+    participant HomepageCreate as homepage-create
+    participant PushHomepageCreate as Push homepage:1
+    participant Demolab10 as demolab-rhel:10.0
+    participant PushRHEL10 as Push demolab-rhel:10.0
+    participant HomepageUpdate as homepage-update
+    participant PushHomepageUpdate as Push homepage:2
+    participant HomepageVM as Homepage VM
 
-%% Begin sequence
-Note over BaseRHEL96,HomepageV1: Initial deployment of homepage Virtual Machine from RHEL 9.6 base image
-BaseRHEL96->>HomepageV1: Deploy homepage v1
+    %% MainVM Creationsu workflow
+    Demolab96-->>PushRHEL96: Push base RHEL 9.6 latest<br/>and 9.6-1747275992 image to Quay
+    PushRHEL96->>HomepageVM1: Convert container image<br/>to VM qcow2 file
+    HomepageVM1->>HomepageVM: Deploy VM using the qcow2 file
 
-Note over HomepageV1,HomepageV2: Upgrade homepage to v2
-HomepageV1->>HomepageV2: Upgrade to v2
+    %% Upgrade path
+    Demolab96Upgrade-->>PushRHEL96Upgrade: Create an upgrade RHEL 9.6<br/>from the latest image 
+    PushRHEL96Upgrade->>VMRHEL96UpgradeLatest: push the upgrade image container<br/>as rhel:9.6 and rhel:latest
+    VMRHEL96UpgradeLatest->>HomepageVM: Apply upgrade in the VM using bootc upgrade and reboot
+    VMRHEL96UpgradeLatest->>Rollback: We can do this included in the<br/>homepage rollout, therefore let rollback
+    HomepageVM-->>Rollback: Rollback option using bootc rollback
+    Rollback->>HomepageVM1: Rollback to the base VM and reboot
 
-Note over HomepageCreate,HomepageV2: New homepage creation triggers v2 deployment
-HomepageCreate->>HomepageV2: Create homepage v2
+    %% Homepage creation
+    VMRHEL96UpgradeLatest-->>HomepageCreate: Container file FROM the demolab-rhel:latest<br/>that will upgrade rhel and have the new homepage
+    HomepageCreate-->>PushHomepageCreate: Build the homepage:1 image<br/>including an upgrade the RHEL 9.6 latest
+    PushHomepageCreate->>HomepageVM: Upgrade the homepage VM with the new<br/>homepage:1 and reboot
 
-Note over HomepageV2,HomepageV3: Upgrade homepage to v3
-HomepageV2->>HomepageV3: Upgrade to v3
+    %% RHEL 10 path
+    Demolab10-->>PushRHEL10: Create a new RHEL 10.0 image<br/>and push as demolab-rhel:10.0<br/>and demolab-rhel:latest
+    PushRHEL10-->>HomepageUpdate: push demolab-rhel:10.0 as the<br/>latest image and prepare<br/>the homepage update Containre file
+    HomepageUpdate-->>PushHomepageUpdate: Build the new homepage:2<br/>image with the new<br/>RHEL 10.0 latest and a homepage update
+    PushHomepageUpdate->>HomepageVM: Deploy homepage:2 using bootc upgrade
 
-Note over CorpRHEL100,HomepageV3: Deploy homepage v3 from RHEL 10.0 base image
-CorpRHEL100->>HomepageV3: Deploy homepage v3
-
-Note over HomepageV3,HomepageV4: Upgrade homepage to v4
-HomepageV3->>HomepageV4: Upgrade to v4
-
-Note over HomepageUpdate,HomepageV4: Update homepage triggers v4 deployment
-HomepageUpdate->>HomepageV4: Update homepage v4
-
-Note over HomepageV4,HomepageV5: Upgrade homepage to v5
-HomepageV4->>HomepageV5: Upgrade to v5
-
+    %% Tooltips and click events for extra detail
+    %%click Demolab96 "RHEL 9.6 Base Image"
+    %%click Demolab10 "RHEL 10.0 Base Image"
 ```
+<!-- The following diagram will be updated as I work through the workflow. -->
 
-## Set the environment
+## Building the demo
+
+> [!CAUTION]
+> The commands need to be updated for all the sections
+
+We include the httpd service from the start in the base image. 
+An alternative is to create a vanilla base image with only our login user in the base image and then do the steps to install httpd service. 
+
+> What we need to do if we install httpd in a next step is after the VM is upgraded to add the httpd log directories in the VM. See the Notes at the end of this document.
+
+### Set the environment
 
 Setup of the terminal for building Image Mode images that we are going to push to the registry.
 In this workshop we will be pushing to Red Hat Quay.
@@ -78,14 +102,33 @@ sudo mkdir -p /run/containers/0
 sudo cp /run/user/1000/containers/auth.json /run/containers/0/auth.json #The user number 1000 may be different for your user
 ```
 
-## Build the demo base image for RHEL
+### Build the demo base image for RHEL
 
 The first steps we will build our base (golden) image that we are going to use within the workshop. We will start with RHEL 9.6 and during the workshop update to RHEL 10.0.
 
-We will name our base (golden) image `demolab-rhel:9.6` and also tag it as our latest rhel base image as `demolab-rhel:latest`.
+We will name our base (golden) image `demolab-rhel:9.6` and also tag it as our latest rhel base image as `demolab-rhel:latest` and `demolab-rhel:9.6-1747275992` to reflect the version. We base the initial image on an older release of RHEL 9.6 so that we can demonstrate the upgrade process to the latest release.
+
 We will then deploy a new virtual machine named `homepage` as this will be our new homepage http server.
 
+```mermaid
+sequenceDiagram
+    %% Actors
+    participant Demolab96 as demolab-rhel:9.6-1747275992
+    participant PushRHEL96 as Push RHEL 9.6-1747275992<br/>base image
+    participant HomepageVM1 as Deploy Homepage VM
+    participant HomepageVM as Homepage VM
+
+
+    %% MainVM Creationsu workflow
+    Demolab96-->>PushRHEL96: Push base RHEL 9.6 latest<br/>and 9.6-1747275992 image to Quay
+    PushRHEL96->>HomepageVM1: Convert container image<br/>to VM qcow2 file
+    HomepageVM1->>HomepageVM: Deploy VM using the qcow2 file
+```
+
 Commands to build the RHEL 9.6 base image.
+
+> [!CAUTION]
+> The commands need to be updated
 
 Change to the folder where you have cloned this repo
 
@@ -195,7 +238,61 @@ sudo bootc status
 >Digest: sha256:a48811e05........... \
 >Version: 9.6 (2025-07-21 13:10:35.887718188 UTC)
 
-## Next steps, now in commands and then build with text and fix the sequence diagram based on the flow
+### Upgrade the base RHEL 9.6 image in the registry to the latest
+
+Upgrade the RHEL 9.6 image to the latest RHEL 9.6 and push it to the registry. We will update the VM from this new image in the registry.
+
+```mermaid
+sequenceDiagram
+    %% Actors
+    participant Demolab96 as demolab-rhel:9.6-1747275992
+    participant HomepageVM1 as Deploy Homepage VM
+    participant Demolab96Upgrade as demolab-rhel:9.6-upgrade
+    participant PushRHEL96Upgrade as Push RHEL 9.6 upgrade
+    participant VMRHEL96UpgradeLatest as VM RHEL 9.6 upgrade latest
+    participant HomepageVM as Homepage VM
+
+    %% Upgrade path
+    Demolab96Upgrade-->>PushRHEL96Upgrade: Create an upgrade RHEL 9.6<br/>from the latest image 
+    PushRHEL96Upgrade->>VMRHEL96UpgradeLatest: push the upgrade image container<br/>as rhel:9.6 and rhel:latest
+    VMRHEL96UpgradeLatest->>HomepageVM: Apply upgrade in the VM using bootc upgrade and reboot
+```
+
+### OPTIONAL: Upgrade the VM to the latest RHEL 9.6 image and do a roll back
+
+Upgrade the VM to the latest RHEL 9.6 using the new image in the registry. We will rollback so that we actually use do the upgrade in the deployment of the home page.
+
+```mermaid
+sequenceDiagram
+    %% Actors
+    participant Demolab96 as demolab-rhel:9.6-1747275992
+    participant VMRHEL96UpgradeLatest as VM RHEL 9.6 upgrade latest
+    participant Rollback as Rollback
+    participant HomepageVM as Homepage VM
+
+    %% Upgrade path
+    PushRHEL96Upgrade->>VMRHEL96UpgradeLatest: push the upgrade image container<br/>as rhel:9.6 and rhel:latest
+    VMRHEL96UpgradeLatest->>HomepageVM: Apply upgrade in the VM using bootc upgrade and reboot
+    VMRHEL96UpgradeLatest->>Rollback: We can do this included in the<br/>homepage rollout, therefore let rollback
+    HomepageVM-->>Rollback: Rollback option using bootc rollback
+    Rollback->>HomepageVM1: Rollback to the base VM and reboot
+```
+
+### Create the home page and install Apache
+
+```mermaid
+sequenceDiagram
+    %% Actors
+    participant Demolab96 as demolab-rhel:9.6-1747275992
+    participant HomepageCreate as homepage-create
+    participant PushHomepageCreate as Push homepage:1
+    participant HomepageVM as Homepage VM
+
+    %% Homepage creation
+    VMRHEL96UpgradeLatest-->>HomepageCreate: Container file FROM the demolab-rhel:latest<br/>that will upgrade rhel and have the new homepage
+    HomepageCreate-->>PushHomepageCreate: Build the homepage:1 image<br/>including an upgrade the RHEL 9.6 latest
+    PushHomepageCreate->>HomepageVM: Upgrade the homepage VM with the new<br/>homepage:1 and reboot
+```
 
 Builder machine:
 
@@ -237,7 +334,52 @@ VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) &
 curl localhost
 ```
 
+### Upgrade the RHEL image to RHEL 10
+
+```mermaid
+sequenceDiagram
+    %% Actors
+    participant Demolab96 as demolab-rhel:9.6-1747275992
+    participant PushRHEL10Upgrade as Push RHEL 10.0 upgrade
+    participant VMRHEL10UpgradeLatest as VM RHEL 10.0 upgrade latest
+    participant Demolab10 as demolab-rhel:10.0
+    participant PushRHEL10 as Push demolab-rhel:10.0
+    participant HomepageUpdate as homepage-update
+    participant PushHomepageUpdate as Push homepage:2
+    participant HomepageVM as Homepage VM
+
+    %% Upgrade path
+    Demolab10Upgrade-->>PushRHEL10Upgrade: Create an upgrade RHEL 9.6<br/>from the latest image 
+    PushRHEL10Upgrade->>VMRHEL10UpgradeLatest: push the upgrade image container<br/>as rhel:9.6 and rhel:latest
+
+    %% RHEL 10 path
+    Demolab10-->>PushRHEL10: Create a new RHEL 10.0 image<br/>and push as demolab-rhel:10.0<br/>and demolab-rhel:latest
+    PushRHEL10-->>HomepageUpdate: push demolab-rhel:10.0 as the<br/>latest image and prepare<br/>the homepage update Containre file
+    HomepageUpdate-->>PushHomepageUpdate: Build the new homepage:2<br/>image with the new<br/>RHEL 10.0 latest and a homepage update
+    PushHomepageUpdate->>HomepageVM: Deploy homepage:2 using bootc upgrade
+```
+
+
+### Upgrade the VM to RHEL 10 and update the homepage
 in the builder machine in the demolab-rhel10.0 directory
+
+```mermaid
+sequenceDiagram
+    %% Actors
+    participant Demolab96 as demolab-rhel:9.6-1747275992
+    participant VMRHEL10UpgradeLatest as VM RHEL 10.0 upgrade latest
+    participant Demolab10 as demolab-rhel:10.0
+    participant PushRHEL10 as Push demolab-rhel:10.0
+    participant HomepageUpdate as homepage-update
+    participant PushHomepageUpdate as Push homepage:2
+    participant HomepageVM as Homepage VM
+
+    %% RHEL 10 path
+    Demolab10-->>PushRHEL10: Create a new RHEL 10.0 image<br/>and push as demolab-rhel:10.0<br/>and demolab-rhel:latest
+    PushRHEL10-->>HomepageUpdate: push demolab-rhel:10.0 as the<br/>latest image and prepare<br/>the homepage update Containre file
+    HomepageUpdate-->>PushHomepageUpdate: Build the new homepage:2<br/>image with the new<br/>RHEL 10.0 latest and a homepage update
+    PushHomepageUpdate->>HomepageVM: Deploy homepage:2 using bootc upgrade
+```
 
 ```bash
 cd ../demolab-rhel10.0
@@ -281,6 +423,9 @@ sudo bootc status
   Rollback image: quay.io/jvdbreggen/demolab-rhel:latest \
           Digest: sha256:7c46d6...... \
          Version: 10.0 (2025-07-21 16:04:36.100285429 UTC)
+
+> [!NOTE]
+> I tried to do an upgrade and then with the homepage still on RHEL 9 to do a rollback and the update the homepage and deploy RHEL 10 again. This breaks SSH.
 
 we need to do this another way
 in the image builder machine
@@ -339,4 +484,8 @@ Installing httpd on a bare RHEL os server you need to create the dirs in /var
 ```bash
 RUN sudo mkdir -p /var/log/httpd
 RUN sudo mkdir -p /var/lib/httpd
+```
+
+```bash
+c "give me the command to convert the image mode RHEL container at quay.io/$QUAY_USER/demolab-rhel:latest to a qcow2 file using the control.json file that is in this directory"
 ```

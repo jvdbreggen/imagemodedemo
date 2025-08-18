@@ -1,5 +1,5 @@
-#FROM registry.redhat.io/rhel9/rhel-bootc:9.6
-FROM quay.io/jvdbreggen/:rhel9.5
+FROM registry.redhat.io/rhel9/rhel-bootc:latest
+
 #RUN dnf -y update && dnf -y install mkpasswd
 #RUN pass=$(mkpasswd --method=SHA-512 --rounds=4096 redhat) && useradd -m -G wheel bootc-user -p $pass
 #RUN echo "%wheel        ALL=(ALL)       NOPASSWD: ALL" > /etc/sudoers.d/wheel-sudo
@@ -7,7 +7,8 @@ FROM quay.io/jvdbreggen/:rhel9.5
 #    systemctl enable httpd && \
 #    mv /var/www /usr/share/www && \
 #    sed -ie 's,/var/www,/usr/share/www,' /etc/httpd/conf/httpd.conf
-COPY files/mariadb.index.html /usr/share/www/html/index.html
+
+COPY files/index.html /usr/share/www/html/index.html
 COPY files/style.css /usr/share/www/html/style.css
 RUN echo "This is a RHEL VM installed using a bootable container as an rpm-ostree source!" > /etc/motd.d/10-first-setup.motd
 RUN echo "This server now supports MariaDB as a database, after the last update." > /etc/motd.d/20-upgrade.motd
