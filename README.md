@@ -245,8 +245,8 @@ Upgrade the RHEL 9.6 image to the latest RHEL 9.6 and push it to the registry. W
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant Demolab96 as demolab-rhel:9.6-1747275992
-    participant HomepageVM1 as Deploy Homepage VM
+    %% participant Demolab96 as demolab-rhel:9.6-1747275992
+    %% participant HomepageVM1 as Deploy Homepage VM
     participant Demolab96Upgrade as demolab-rhel:9.6-upgrade
     participant PushRHEL96Upgrade as Push RHEL 9.6 upgrade
     participant VMRHEL96UpgradeLatest as VM RHEL 9.6 upgrade latest
@@ -265,7 +265,7 @@ Upgrade the VM to the latest RHEL 9.6 using the new image in the registry. We wi
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant Demolab96 as demolab-rhel:9.6-1747275992
+    %% participant Demolab96 as demolab-rhel:9.6-1747275992
     participant VMRHEL96UpgradeLatest as VM RHEL 9.6 upgrade latest
     participant Rollback as Rollback
     participant HomepageVM as Homepage VM
@@ -283,7 +283,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant Demolab96 as demolab-rhel:9.6-1747275992
+    %% participant Demolab96 as demolab-rhel:9.6-1747275992
     participant HomepageCreate as homepage-create
     participant PushHomepageCreate as Push homepage:1
     participant HomepageVM as Homepage VM
@@ -339,7 +339,7 @@ curl localhost
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant Demolab96 as demolab-rhel:9.6-1747275992
+    %% participant Demolab96 as demolab-rhel:9.6-1747275992
     participant PushRHEL10Upgrade as Push RHEL 10.0 upgrade
     participant VMRHEL10UpgradeLatest as VM RHEL 10.0 upgrade latest
     participant Demolab10 as demolab-rhel:10.0
@@ -366,8 +366,8 @@ in the builder machine in the demolab-rhel10.0 directory
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant Demolab96 as demolab-rhel:9.6-1747275992
-    participant VMRHEL10UpgradeLatest as VM RHEL 10.0 upgrade latest
+    %% participant Demolab96 as demolab-rhel:9.6-1747275992
+    %% participant VMRHEL10UpgradeLatest as VM RHEL 10.0 upgrade latest
     participant Demolab10 as demolab-rhel:10.0
     participant PushRHEL10 as Push demolab-rhel:10.0
     participant HomepageUpdate as homepage-update
@@ -383,9 +383,13 @@ sequenceDiagram
 
 ```bash
 cd ../demolab-rhel10.0
+```
 
+```bash
 podman build -t quay.io/$QUAY_USER/demolab-rhel:latest -t quay.io/$QUAY_USER/demolab-rhel:10.0 -f Containerfile
+```
 
+```bash
 podman push quay.io/$QUAY_USER/demolab-rhel:latest && podman push quay.io/$QUAY_USER/demolab-rhel:10.0
 ```
 
