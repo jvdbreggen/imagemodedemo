@@ -73,54 +73,6 @@ push_v3_homepage_latest-->vm2homepage_upgrade[Upgrade VM to RHEL 10 and the home
 vm2homepage_upgrade-->vm3homepage[Homepage VM v3];
 ```
 
-```mermaid
-sequenceDiagram
-    %% Actors
-    participant Demolab96 as demolab-rhel:9.6-1747275992
-    participant PushRHEL96 as Push RHEL 9.6-1747275992<br/>base image
-    participant HomepageVM1 as Deploy Homepage VM
-    participant Demolab96Upgrade as demolab-rhel:9.6-upgrade
-    participant PushRHEL96Upgrade as Push RHEL 9.6 upgrade
-    participant VMRHEL96UpgradeLatest as VM RHEL 9.6 upgrade latest
-    participant Rollback as Rollback
-    participant HomepageCreate as homepage-create
-    participant PushHomepageCreate as Push homepage:1
-    participant Demolab10 as demolab-rhel:10.0
-    participant PushRHEL10 as Push demolab-rhel:10.0
-    participant HomepageUpdate as homepage-update
-    participant PushHomepageUpdate as Push homepage:2
-    participant HomepageVM as Homepage VM
-
-    %% MainVM Creationsu workflow
-    Demolab96-->>PushRHEL96: Push base RHEL 9.6 latest<br/>and 9.6-1747275992 image to Quay
-    PushRHEL96->>HomepageVM1: Convert container image<br/>to VM qcow2 file
-    HomepageVM1->>HomepageVM: Deploy VM using the qcow2 file
-
-    %% Upgrade path
-    Demolab96Upgrade-->>PushRHEL96Upgrade: Create an upgrade RHEL 9.6<br/>from the latest image 
-    PushRHEL96Upgrade->>VMRHEL96UpgradeLatest: push the upgrade image container<br/>as rhel:9.6 and rhel:latest
-    VMRHEL96UpgradeLatest->>HomepageVM: Apply upgrade in the VM using bootc upgrade and reboot
-    VMRHEL96UpgradeLatest->>Rollback: We can do this included in the<br/>homepage rollout, therefore let rollback
-    HomepageVM-->>Rollback: Rollback option using bootc rollback
-    Rollback->>HomepageVM1: Rollback to the base VM and reboot
-
-    %% Homepage creation
-    VMRHEL96UpgradeLatest-->>HomepageCreate: Container file FROM the demolab-rhel:latest<br/>that will upgrade rhel and have the new homepage
-    HomepageCreate-->>PushHomepageCreate: Build the homepage:1 image<br/>including an upgrade the RHEL 9.6 latest
-    PushHomepageCreate->>HomepageVM: Upgrade the homepage VM with the new<br/>homepage:1 and reboot
-
-    %% RHEL 10 path
-    Demolab10-->>PushRHEL10: Create a new RHEL 10.0 image<br/>and push as demolab-rhel:10.0<br/>and demolab-rhel:latest
-    PushRHEL10-->>HomepageUpdate: push demolab-rhel:10.0 as the<br/>latest image and prepare<br/>the homepage update Containre file
-    HomepageUpdate-->>PushHomepageUpdate: Build the new homepage:2<br/>image with the new<br/>RHEL 10.0 latest and a homepage update
-    PushHomepageUpdate->>HomepageVM: Deploy homepage:2 using bootc upgrade
-
-    %% Tooltips and click events for extra detail
-    %%click Demolab96 "RHEL 9.6 Base Image"
-    %%click Demolab10 "RHEL 10.0 Base Image"
-```
-<!-- The following diagram will be updated as I work through the workflow. -->
-
 ## Building the demo
 
 > [!CAUTION]
