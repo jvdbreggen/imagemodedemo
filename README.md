@@ -5,26 +5,72 @@ Draft container files, index.html, and config files to get an Image Mode worksho
 
 ## The workflow
 
+The diagram below shows the various flows that can be used during this demo.
+The flow is as follow:
+
+1. Create a RHEL 9.6-1747275992 base image with a user that is part of the wheel group and push that image to the registry as our 9.6 and latest images.
+2. Create our application images and VMs.
+    1. Create a homepage image based on our RHEL 9.6 base image adding the Apache httpd service.
+    2. Create a MariaDB server image based on our RHEL 9.6 base image
+3. Deploy the application images as a virtual machine servers.
+    1. Pull and convert the homepage:latest image to our new Homepage virtual machine server.
+    2. Pull and convert the mariadb:latest image to our new Database virtual machine server.
+4. Optional rollback demo.
+    1. Upgrade the homepage from the basic RHEL 9 welcome page to the new homepage that includes the Image Mode details.
+    2. Push the upgrade to the registry
+    3. Upgrade our VM and reboot
+    4. Rollback. Since we wanted to include the RHEL 9.6 latest code in our image as well, we are going to roll back and peform the next steps in upgrading RHEL 9.6 as well then then deploy again. 
+5. Upgrade the base RHEL 9.6 image to the latest RHEL 9.6 image and push the upgrades to the repository as 9.6 and latest.
+6. Upgrade the homepage from the basic RHEL 9 welcome page to include Image Mode detail. As we do the upgrade of the homepage we will also pull in the RHEL 9.6 latest base image. Push the upgrades to our registry as a new homepage version and the latest tag.
+7. Upgrade the Homepage VM to the latest version and reboot.
+8. Optional: Upgrade the Database server. This shows how different application servers are updated when the latest base RHEL image is updated. 
+    1. Using the same MariaDB Container file, create a new database image version and push it to a new version and latest.
+    2. Upgrade the Database Virtual Machine and reboot.
+9. Upgrade the base RHEL image to RHEL 10.
+    1. Create a new RHEL 10 image and push it to the registry as a new RHEL 10 image and update the latest RHEL image tag to point to the new RHEL 10 image.
+10. Upgrade the homepage from the RHEL 9 welcome page to the new RHEL 10 homepage. As we do the upgrade of the homepage we will also pull in the RHEL 10.0 latest base image as the latest tag of the RHEL image is pointing to the RHEL 10 image. Push the upgrades to our registry as a new homepage version and the latest tag.
+7. Upgrade the Homepage VM to the latest RHEL version (RHEL 10) and reboot.
+8. Optional: Upgrade the Database server. This shows how different application servers are updated to a new RHEL release when the latest base RHEL image is upgraded. 
+    1. Using the same MariaDB Container file, create a new database image version and push it to a new version and latest.
+    2. Upgrade the Database Virtual Machine and reboot.
+
 ```mermaid
 graph TD;
-    demolab96([1.demolab-rhel:9.6-1747275992])-.->pushrhel96-1747275992@{ shape: notch-rect, label: "2.Push RHEL 9.6-1747275992 base image" }-->
-    homepagevm1[3.deploy Homepage VM]-->homepageVM;
 
-    demolab96-upgrade-.->pushrhel96-upgrade@{ shape: notch-rect, label: "Push RHEL 9.6 upgrade" };
-    pushrhel96-upgrade-->vmrhel96upgradelatest;
-    vmrhel96upgradelatest-->homepageVM;
-    vmrhel96upgradelatest-->rollback-->homepagevm1;
-    homepageVM-->rollback;
+vm1homepage[Deploy Homepage VM v1];
+vm21homepage[Homepage VM v2.1];
+vm3homepage[Homepage VM v3];
 
-    homepagecreate([homepage-create]);
-    pushrhel96-upgrade-->homepagecreate;
-    homepagecreate-.->pushhomepagecreate@{ shape: notch-rect, label: "Push homepage:1" };
-    pushhomepagecreate-->homepageVM;
+container_rhel96-1747275992[demolab-rhel:9.6-1747275992]-.->push_rhel96-1747275992@{ shape: notch-rect, label: "Push RHEL 9.6-1747275992 demolab image" };
+push_rhel96-1747275992-.->push_rhel96-latest1@{ shape: notch-rect, label: "Push RHEL 9.6 latest demolab image" };
 
-    demolab10([demolab-rhel10.0])-.->pushrhel10@{ shape: notch-rect, label: "Push demolab-rhel:10.0" };
-    homepageupdate[homepage-update]-.->pushhomepageupdate@{ shape: notch-rect, label: "Push homepage:2" }
-    pushrhel10-->homepageupdate;
-    pushhomepageupdate-->homepageVM;
+push_rhel96-latest1-->container_v1_homepage[Build homepage v1];
+container_v1_homepage[Build homepage v1]-.->push_v1_homepage@{ shape: notch-rect, label: "Push homepage v1" };
+
+push_v1_homepage-.->push_homepage-latest1@{ shape: notch-rect, label: "Push homepage latest" };
+push_homepage-latest1-->vm1homepage;
+
+vm1homepage-->container_rhel96-upgrade[demolab-rhel:9.6-upgrade]
+-.->push_rhel96-upgrade@{ shape: notch-rect, label: "Push RHEL 9.6 upgrade" };
+push_rhel96-upgrade-.->rhel96_upgrade-latest@{ shape: notch-rect, label: "Push RHEL 9.6 upgrade latest" };
+rhel96_upgrade-latest-->vm1homepage_rhel_upgrade[Upgrade VM to RHEL 9.6 upgrade, homepage v2]; 
+vm1homepage_rhel_upgrade-->rollback1[Rollback to homepage v1]-->vm1homepage;
+
+vm1homepage-->container_homepage21[Build Homepage Image v2.1 with index.html upgrade and RHEL 9.6 upgrade];
+rhel96_upgrade-latest-->container_homepage21;
+container_homepage21-.->push_v2.1_homepage@{ shape: notch-rect, label: "Push homepage v2.1" };
+push_v2.1_homepage-.->push_v2.1_homepage_latest@{ shape: notch-rect, label: "Push Homepage v2.1 to latest tag" };
+push_v2.1_homepage_latest-->vm21homepage_upgrade[Upgrade the Homepage VM to homepage v2.1];
+vm21homepage_upgrade-->vm21homepage;
+
+vm21homepage-->container_rhel10[Build the RHEL 10 demolab container];
+container_rhel10-.->push_rhel10@{ shape: notch-rect, label: "Push RHEL 10 demolab image" };
+push_rhel10-.->push_rhel10_latest@{ shape: notch-rect, label: "Push RHEL 10 demolab image as latest tag" };
+push_rhel10_latest-->container_homepage3[Build a new container, RHEL 10 and update the index.html to RHEL 10];
+container_homepage3-.->push_v3_homepage@{ shape: notch-rect, label: "Push homepage v3" };
+push_v3_homepage-.->push_v3_homepage_latest@{ shape: notch-rect, label: "Push homepage v3 to latest tag" };
+push_v3_homepage_latest-->vm2homepage_upgrade[Upgrade VM to RHEL 10 and the homepage for RHEL 10];
+vm2homepage_upgrade-->vm3homepage[Homepage VM v3];
 ```
 
 ```mermaid
