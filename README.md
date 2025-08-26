@@ -3,6 +3,9 @@
 Image Mode Demo scripts
 Draft container files, index.html, and config files to get an Image Mode workshop story going.
 
+> [!NOTE]
+> Branch build4 contains the latest updates
+
 ## The workflow
 
 The diagram below shows the various flows that can be used during this demo.
@@ -19,18 +22,18 @@ The flow is as follow:
     1. Upgrade the homepage from the basic RHEL 9 welcome page to the new homepage that includes the Image Mode details.
     2. Push the upgrade to the registry
     3. Upgrade our VM and reboot
-    4. Rollback. Since we wanted to include the RHEL 9.6 latest code in our image as well, we are going to roll back and peform the next steps in upgrading RHEL 9.6 as well then then deploy again. 
+    4. Rollback. Since we wanted to include the RHEL 9.6 latest code in our image as well, we are going to roll back and peform the next steps in upgrading RHEL 9.6 as well then then deploy again.
 5. Upgrade the base RHEL 9.6 image to the latest RHEL 9.6 image and push the upgrades to the repository as 9.6 and latest.
 6. Upgrade the homepage from the basic RHEL 9 welcome page to include Image Mode detail. As we do the upgrade of the homepage we will also pull in the RHEL 9.6 latest base image. Push the upgrades to our registry as a new homepage version and the latest tag.
 7. Upgrade the Homepage VM to the latest version and reboot.
-8. Optional: Upgrade the Database server. This shows how different application servers are updated when the latest base RHEL image is updated. 
+8. Optional: Upgrade the Database server. This shows how different application servers are updated when the latest base RHEL image is updated.
     1. Using the same MariaDB Container file, create a new database image version and push it to a new version and latest.
     2. Upgrade the Database Virtual Machine and reboot.
 9. Upgrade the base RHEL image to RHEL 10.
     1. Create a new RHEL 10 image and push it to the registry as a new RHEL 10 image and update the latest RHEL image tag to point to the new RHEL 10 image.
 10. Upgrade the homepage from the RHEL 9 welcome page to the new RHEL 10 homepage. As we do the upgrade of the homepage we will also pull in the RHEL 10.0 latest base image as the latest tag of the RHEL image is pointing to the RHEL 10 image. Push the upgrades to our registry as a new homepage version and the latest tag.
-7. Upgrade the Homepage VM to the latest RHEL version (RHEL 10) and reboot.
-8. Optional: Upgrade the Database server. This shows how different application servers are updated to a new RHEL release when the latest base RHEL image is upgraded. 
+11. Upgrade the Homepage VM to the latest RHEL version (RHEL 10) and reboot.
+12. Optional: Upgrade the Database server. This shows how different application servers are updated to a new RHEL release when the latest base RHEL image is upgraded.
     1. Using the same MariaDB Container file, create a new database image version and push it to a new version and latest.
     2. Upgrade the Database Virtual Machine and reboot.
 
@@ -78,8 +81,8 @@ vm2homepage_upgrade-->vm3homepage[Homepage VM v3];
 > [!CAUTION]
 > The commands need to be updated for all the sections
 
-We include the httpd service from the start in the base image. 
-An alternative is to create a vanilla base image with only our login user in the base image and then do the steps to install httpd service. 
+We include the httpd service from the start in the base image.
+An alternative is to create a vanilla base image with only our login user in the base image and then do the steps to install httpd service.
 
 > What we need to do if we install httpd in a next step is after the VM is upgraded to add the httpd log directories in the VM. See the Notes at the end of this document.
 
@@ -156,6 +159,8 @@ podman push quay.io/$QUAY_USER/demolab-rhel:latest
 Now we are ready to create the virtual machine disk image that we are going to import into our new VM.
 
 In some cases the podman command is unable to initially pull the image from the registry and returns an error that you have to pull the image from the registry before building the disk. Use a pull command to syncronise the local images.
+
+Since we need to run podman as root to build the virtual machine qcow2 image file, we need to pull the image as root.
 
 ```bash
 sudo podman pull quay.io/$QUAY_USER/demolab-rhel:9.6
@@ -357,8 +362,8 @@ sequenceDiagram
     PushHomepageUpdate->>HomepageVM: Deploy homepage:2 using bootc upgrade
 ```
 
-
 ### Upgrade the VM to RHEL 10 and update the homepage
+
 in the builder machine in the demolab-rhel10.0 directory
 
 ```mermaid
@@ -426,6 +431,7 @@ sudo bootc status
           Digest: sha256:7c46d6...... \
          Version: 10.0 (2025-07-21 16:04:36.100285429 UTC)
 
+The note below is for the old flow, I think I have it fixed.
 > [!NOTE]
 > I tried to do an upgrade and then with the homepage still on RHEL 9 to do a rollback and the update the homepage and deploy RHEL 10 again. This breaks SSH.
 
@@ -481,7 +487,7 @@ Let's rollback again and then apply a new homepage whereby the RHEL 10 OS upgrad
 
 ## Notes
 
-Installing httpd on a bare RHEL os server you need to create the dirs in /var
+Installing httpd on a bare RHEL os VM server you need to create the dirs in /var
 
 ```bash
 RUN sudo mkdir -p /var/log/httpd
@@ -491,3 +497,30 @@ RUN sudo mkdir -p /var/lib/httpd
 ```bash
 c "give me the command to convert the image mode RHEL container at quay.io/$QUAY_USER/demolab-rhel:latest to a qcow2 file using the control.json file that is in this directory"
 ```
+
+## Ideas
+
+New flow for the homepage VM
+
+1. build the httpd server image on rhel 9.6
+    1. deploy the homepage vm
+    2. show simple web site
+2. build the homepage-create image but use FROM rhel 9.6
+    1. bootc switch to the homepage image
+    2. the httpd service was removed as we did not build from the httpd image
+    3. use bootc rollback and reboot
+    4. the basic homepage is working again
+3. Change the homepage create container file FROM httpd image
+    1. build a new version and push
+4. In the homepage VM do the bootc switch again
+    1. do a bootc status, show staged, current and rollback
+    2. reboot
+    3. refresh the page and it will show the new homepage on image mode
+5. then we continue with the RHEL 10 home page upgrade that includes RHEL 10
+    1. build the RHEL 10 demolab image and push to rhel:10 and rhel:latest
+    2. build a new version of the http image
+    3. build the upgrade rhel 10 homepage
+    4. upgrade the homepage vm with bootc upgrade
+    5. show the update web page
+
+Build an ansible playbook and inventory that will upgrade the VMs and reboot when new releases are pushed.
