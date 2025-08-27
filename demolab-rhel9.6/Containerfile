@@ -1,28 +1,4 @@
 FROM registry.redhat.io/rhel9/rhel-bootc:latest
-#FROM registry.redhat.io/rhel9/rhel-bootc:9.6-1747275992
 
 RUN dnf -y install mkpasswd
 RUN pass=$(mkpasswd --method=SHA-512 --rounds=4096 redhat) && useradd -m -G wheel bootc-user -p $pass
-# RUN echo "%wheel        ALL=(ALL)       NOPASSWD: ALL" > /etc/sudoers.d/wheel-sudo
-
-RUN dnf -y install httpd
-
-ADD etc/ /etc
-
-RUN <<EOF 
-    set -euxo pipefail
-    mv /var/www /usr/share/www
-    sed -i 's-/var/www-/usr/share/www-' /etc/httpd/conf/httpd.conf
-EOF
-  
-ADD html/ /usr/share/www/html
-# COPY html/index.html /usr/share/www/html/index.html
-# COPY html/style.css /usr/share/www/html/style.css
-# COPY html/osrelease.js /usr/share/www/html/osrelease.js
-
-RUN cp /etc/redhat-release /usr/share/www/html/redhat-release
-RUN cp /etc/os-release /usr/share/www/html/os-release
-
-RUN systemctl enable httpd 
-
-EXPOSE 80
