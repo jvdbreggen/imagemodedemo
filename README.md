@@ -145,9 +145,68 @@ sudo cp /run/user/1000/containers/auth.json /run/containers/0/auth.json #The use
 
 The first steps we will build our base (golden) image that we are going to use within the workshop. We will start with RHEL 9.6 and during the workshop update to RHEL 10.0.
 
-We will name our base (golden) image `demolab-rhel:9.6` and also tag it as our latest rhel base image as `demolab-rhel:latest` and `demolab-rhel:9.6-1747275992` to reflect the version. We base the initial image on an older release of RHEL 9.6 so that we can demonstrate the upgrade process to the latest release.
+We will name our base (golden) image `demolab-rhel:9.6` and also tag it as our latest rhel base image as `demolab-rhel:latest`.
 
+1. Use podman to build our corporate or demolab base RHEL "golden image".
+
+```bash
+podman build -t quay.io/$QUAY_USER/demolab-rhel:latest -t quay.io/$QUAY_USER/demolab-rhel:9.6 -f Containerfile
+```
+
+2. Push the demolab base rhel image to our registry.
+
+```bash
+podman push quay.io/jvdbreggen/demolab-rhel:latest && podman push quay.io/jvdbreggen/demolab-rhel:9.6
+```
+
+> [!NOTE]
+>In the optional steps we base the initial image on an older release of RHEL 9.6 so that we can demonstrate the upgrade process to the latest release and how to create base images based on a tested timestamp.
+> In the optional section we create our base images for RHEL 9.6 on a specific version, for example `rhel:9.6-1747275992` and push this version to the registry as `demolab-rhel:9.6-1747275992` to reflect the version.
+
+This sequence diagram show the steps that we are going to take.
+
+```mermaid
+sequenceDiagram
+    %% Actors
+    participant containerfile_rhel_96 as Containerfile<br/>demolab-rhel:9.6
+    participant registry as Registry
+
+    %% MainVM Creationsu workflow
+    containerfile_rhel_96->>registry: Push base RHEL 9.6<br/>as demolab-rhel:9.6 image to the registry
+    containerfile_rhel_96->>registry: Push base RHEL 9.6<br/>as demolab-rhel:latest image to the registry
+```
+
+### Deploying the Homepage VM
+
+
+
+
+The following sequence diagram shows the steps that we will take to deploy our Homepage VM from the base image.
+
+
+
+```mermaid
+sequenceDiagram
+    %% Actors
+    participant containerfile_httpd_1 as Containerfile<br/>demolab-httpd:1
+    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:1
+    participant registry as Registry
+    participant homepage_vm_1 as homepage VM
+
+    %% MainVM Creationsu workflow
+    registry-->>containerfile_httpd_1: Build httpd service image Containerfile<br/>from demolab-rhel:latest
+    containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:1 to the registry
+    containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:latest to the registry
+    registry-->>containerfile_homepage_1: Build homepage image Containerfile<br/>from demolab-httpd:latest
+    containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:1 to the registry
+    containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:latest to the registry
+    registry-->>homepage_vm_1: Convert demolab-homepage:latest to Virtual Machine<br/> disk image and deploy VM homepage
+```
+
+#### Build the httpd service image
 We will then deploy a new virtual machine named `homepage` as this will be our new homepage http server.
+
+#### Deploy our Homepage VM from the httpd service image
 
 ```mermaid
 sequenceDiagram
