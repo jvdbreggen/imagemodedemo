@@ -145,24 +145,6 @@ sudo cp /run/user/1000/containers/auth.json /run/containers/0/auth.json #The use
 
 The first steps we will build our base (golden) image that we are going to use within the workshop. We will start with RHEL 9.6 and during the workshop update to RHEL 10.0.
 
-We will name our base (golden) image `demolab-rhel:9.6` and also tag it as our latest rhel base image as `demolab-rhel:latest`.
-
-1. Use podman to build our corporate or demolab base RHEL "golden image".
-
-```bash
-podman build -t quay.io/$QUAY_USER/demolab-rhel:latest -t quay.io/$QUAY_USER/demolab-rhel:9.6 -f Containerfile
-```
-
-2. Push the demolab base rhel image to our registry.
-
-```bash
-podman push quay.io/jvdbreggen/demolab-rhel:latest && podman push quay.io/jvdbreggen/demolab-rhel:9.6
-```
-
-> [!NOTE]
->In the optional steps we base the initial image on an older release of RHEL 9.6 so that we can demonstrate the upgrade process to the latest release and how to create base images based on a tested timestamp.
-> In the optional section we create our base images for RHEL 9.6 on a specific version, for example `rhel:9.6-1747275992` and push this version to the registry as `demolab-rhel:9.6-1747275992` to reflect the version.
-
 This sequence diagram show the steps that we are going to take.
 
 ```mermaid
@@ -176,14 +158,37 @@ sequenceDiagram
     containerfile_rhel_96->>registry: Push base RHEL 9.6<br/>as demolab-rhel:latest image to the registry
 ```
 
-### Deploying the Homepage VM
+We will name our base (golden) image `demolab-rhel:9.6` and also tag it as our latest rhel base image as `demolab-rhel:latest`.
 
+1. Use podman to build our corporate or demolab base RHEL "golden image". Change to the folder where you have cloned this repo and use `podman build` to build the image from the `Containerfile`.
 
+```bash
+cd $HOME/imagemodedemo/demolab-rhel9.6
+```
 
+```bash
+podman build -t quay.io/$QUAY_USER/demolab-rhel:latest -t quay.io/$QUAY_USER/demolab-rhel:9.6 -f Containerfile
+```
 
-The following sequence diagram shows the steps that we will take to deploy our Homepage VM from the base image.
+2. If we want to test our image we can run it in a container. You can log in with user `bootc-user` and password `redhat` and run `curl localhost` to test if the httpd service is running and you can see the base image welcome page. You can stop and exit the container with `sudo halt`.
 
+```bash
+podman run -it --rm --name demolab-rhel-96 -p 8080:80 quay.io/$QUAY_USER/demolab-rhel:9.6
+```
 
+3. Push the demolab base rhel image to our registry.
+
+```bash
+podman push quay.io/jvdbreggen/demolab-rhel:latest && podman push quay.io/jvdbreggen/demolab-rhel:9.6
+```
+
+> [!NOTE]
+>In the optional steps we base the initial image on an older release of RHEL 9.6 so that we can demonstrate the upgrade process to the latest release and how to create base images based on a tested timestamp.
+> In the optional section we create our base images for RHEL 9.6 on a specific version, for example `rhel:9.6-1747275992` and push this version to the registry as `demolab-rhel:9.6-1747275992` to reflect the version.
+
+### Deploying the Homepage Virtual Machine
+
+The following sequence diagram shows the steps that we will take to deploy our Homepage VM from the base image. We will name the VM as `homepage` and start to build
 
 ```mermaid
 sequenceDiagram
@@ -197,71 +202,20 @@ sequenceDiagram
     registry-->>containerfile_httpd_1: Build httpd service image Containerfile<br/>from demolab-rhel:latest
     containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:1 to the registry
     containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:latest to the registry
-    registry-->>containerfile_homepage_1: Build homepage image Containerfile<br/>from demolab-httpd:latest
-    containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:1 to the registry
-    containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:latest to the registry
-    registry-->>homepage_vm_1: Convert demolab-homepage:latest to Virtual Machine<br/> disk image and deploy VM homepage
-```
-
-#### Build the httpd service image
-We will then deploy a new virtual machine named `homepage` as this will be our new homepage http server.
-
-#### Deploy our Homepage VM from the httpd service image
-
-```mermaid
-sequenceDiagram
-    %% Actors
-    participant Demolab96 as demolab-rhel:9.6-1747275992
-    participant PushRHEL96 as Push RHEL 9.6-1747275992<br/>base image
-    participant HomepageVM1 as Deploy Homepage VM
-    participant HomepageVM as Homepage VM
-
-
-    %% MainVM Creationsu workflow
-    Demolab96-->>PushRHEL96: Push base RHEL 9.6 latest<br/>and 9.6-1747275992 image to Quay
-    PushRHEL96->>HomepageVM1: Convert container image<br/>to VM qcow2 file
-    HomepageVM1->>HomepageVM: Deploy VM using the qcow2 file
-```
-
-Commands to build the RHEL 9.6 base image.
-
-> [!CAUTION]
-> The commands need to be updated
-
-Change to the folder where you have cloned this repo
-
-```bash
-cd $HOME/imagemodedemo/demolab-rhel9.6
-```
-
-```bash
-podman build -t quay.io/$QUAY_USER/demolab-rhel:latest -t quay.io/$QUAY_USER/demolab-rhel:9.6 -f Containerfile
-```
-
-If we want to test our image we can run it in a container.
-
-You can log in with user `bootc-user` and password `redhat` and run `curl localhost` to test if the httpd service is running and you can see the base image welcome page. You can stop and exit the container with `sudo halt`.
-
-```bash
-podman run -it --rm --name demolab-rhel-96 -p 8080:80 quay.io/$QUAY_USER/demolab-rhel:9.6
-```
-
-Next we are going to push our images to the Quay repository.
-
-```bash
-podman push quay.io/$QUAY_USER/demolab-rhel:rhel9.6
-podman push quay.io/$QUAY_USER/demolab-rhel:latest
+    registry-->>homepage_vm_1: Convert demolab-httpd:latest to Virtual Machine<br/> disk image and deploy VM homepage
 ```
 
 Now we are ready to create the virtual machine disk image that we are going to import into our new VM.
 
 In some cases the podman command is unable to initially pull the image from the registry and returns an error that you have to pull the image from the registry before building the disk. Use a pull command to syncronise the local images.
 
-Since we need to run podman as root to build the virtual machine qcow2 image file, we need to pull the image as root.
+1. Since we need to run podman as root to build the virtual machine qcow2 image file, we need to pull the image as root.
 
 ```bash
 sudo podman pull quay.io/$QUAY_USER/demolab-rhel:9.6
 ```
+
+2. We need to use podman to run the Image Mode virtual machine disk builder to pull the image from the registry and create the virtual machine disk file.
 
 ```bash
 sudo podman run \
@@ -278,15 +232,15 @@ sudo podman run \
 quay.io/$QUAY_USER/demolab-rhel:latest
 ```
 
-We will copy the new disk image to the libvirt images pool.
+3. We will copy the new disk image to the libvirt images pool.
+
 > You can move the disk image if you don't plan to use it for another VM using the mv command.
 
 ```bash
 sudo cp ./qcow2/disk.qcow2 /var/lib/libvirt/images/homepage.qcow2
 ```
 
-Create the VM from the copied virtual machine image qcow2 file.
-We will give it 4GB of RAM and set the boot option to UEFI.
+4. Create the VM from the copied virtual machine image qcow2 file. We will give it 4GB of RAM and set the boot option to UEFI.
 
 ```bash
 sudo virt-install \
@@ -302,33 +256,33 @@ sudo virt-install \
   --disk /var/lib/libvirt/images/homepage.qcow2
 ```
 
-Start the VM.
+5. Start the VM.
 
 ```bash
 sudo virsh start homepage
 ```
 
-and login via ssh. You can use the following command that will get the IP address from virsh and log you in.
+6. Login via ssh. You can use the following command that will get the IP address from virsh and log you in. 
 
 ```bash
 VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) && ssh bootc-user@$VM_IP
 ```
 
-You can run a `curl localhost` to check if the httpd service with our base image homepage is working. Exit the VM with `exit`, `logout` or Ctrl-d.
+7. You can run a `curl localhost` to check if the httpd service with our base image homepage is working. Exit the VM with `exit`, `logout` or Ctrl-d.
 
-Since we are going to refer to the quay.io registry, let us add $QUAY_USER to our .bashrc file.
+8. Since we are going to refer to the quay.io registry, let us add $QUAY_USER to our .bashrc file.
 
 ```bash
 sed -i '/unset rc[^\n]*/,$!b;//{x;//p;g};//!H;$!d;x;iQUAY_USER="your quay.io username not the email address"' .bashrc
 ```
 
-and reload the .bashrc file to bring QUAY_USER into the variables.
+9. and reload the .bashrc file to bring QUAY_USER into the variables.
 
 ```bash
 source .bashrc
 ```
 
-Finally for this section run the bootc status command to view the booted image registry source and the RHEL version.
+10. Finally for this section run the bootc status command to view the booted image registry source and the RHEL version.
 
 ```bash
 sudo bootc status
@@ -338,78 +292,67 @@ sudo bootc status
 >Digest: sha256:a48811e05........... \
 >Version: 9.6 (2025-07-21 13:10:35.887718188 UTC)
 
-### Upgrade the base RHEL 9.6 image in the registry to the latest
+Our virtual machine based on Image Mode is now running and we are ready to make updates to the web page.
 
-Upgrade the RHEL 9.6 image to the latest RHEL 9.6 and push it to the registry. We will update the VM from this new image in the registry.
+#### Update the Homepage VM to our Image Mode web page
 
-```mermaid
-sequenceDiagram
-    %% Actors
-    %% participant Demolab96 as demolab-rhel:9.6-1747275992
-    %% participant HomepageVM1 as Deploy Homepage VM
-    participant Demolab96Upgrade as demolab-rhel:9.6-upgrade
-    participant PushRHEL96Upgrade as Push RHEL 9.6 upgrade
-    participant VMRHEL96UpgradeLatest as VM RHEL 9.6 upgrade latest
-    participant HomepageVM as Homepage VM
+The next steps we will update the web page in our `homepage` VM from the basic RHEL webpage that we created to an more updated web page showing the advantages of using Image Mode.
 
-    %% Upgrade path
-    Demolab96Upgrade-->>PushRHEL96Upgrade: Create an upgrade RHEL 9.6<br/>from the latest image 
-    PushRHEL96Upgrade->>VMRHEL96UpgradeLatest: push the upgrade image container<br/>as rhel:9.6 and rhel:latest
-    VMRHEL96UpgradeLatest->>HomepageVM: Apply upgrade in the VM using bootc upgrade and reboot
-```
-
-### OPTIONAL: Upgrade the VM to the latest RHEL 9.6 image and do a roll back
-
-Upgrade the VM to the latest RHEL 9.6 using the new image in the registry. We will rollback so that we actually use do the upgrade in the deployment of the home page.
+The following sequence diagram shows the steps that we will take to deploy our Homepage VM from the base image. We will name the VM as `homepage` and start to build
 
 ```mermaid
 sequenceDiagram
     %% Actors
-    %% participant Demolab96 as demolab-rhel:9.6-1747275992
-    participant VMRHEL96UpgradeLatest as VM RHEL 9.6 upgrade latest
-    participant Rollback as Rollback
-    participant HomepageVM as Homepage VM
+    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:1
+    participant registry as Registry
+    participant homepage_vm_1 as homepage VM
 
-    %% Upgrade path
-    PushRHEL96Upgrade->>VMRHEL96UpgradeLatest: push the upgrade image container<br/>as rhel:9.6 and rhel:latest
-    VMRHEL96UpgradeLatest->>HomepageVM: Apply upgrade in the VM using bootc upgrade and reboot
-    VMRHEL96UpgradeLatest->>Rollback: We can do this included in the<br/>homepage rollout, therefore let rollback
-    HomepageVM-->>Rollback: Rollback option using bootc rollback
-    Rollback->>HomepageVM1: Rollback to the base VM and reboot
+    %% MainVM Creationsu workflow
+    registry-->>containerfile_homepage_1: Build homepage image Containerfile<br/>from demolab-httpd:latest
+    containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:1 to the registry
+    containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:latest to the registry
+    registry-->>homepage_vm_1: Switch the homepage Virtual Machine to the demolab-homepage:latest <br/>image to update the web page
 ```
 
-### Create the home page and install Apache
+On our image builder server we will build a new Image Mode for RHEL 9 homepage image that we will deploy to the VM.
 
-```mermaid
-sequenceDiagram
-    %% Actors
-    %% participant Demolab96 as demolab-rhel:9.6-1747275992
-    participant HomepageCreate as homepage-create
-    participant PushHomepageCreate as Push homepage:1
-    participant HomepageVM as Homepage VM
-
-    %% Homepage creation
-    VMRHEL96UpgradeLatest-->>HomepageCreate: Container file FROM the demolab-rhel:latest<br/>that will upgrade rhel and have the new homepage
-    HomepageCreate-->>PushHomepageCreate: Build the homepage:1 image<br/>including an upgrade the RHEL 9.6 latest
-    PushHomepageCreate->>HomepageVM: Upgrade the homepage VM with the new<br/>homepage:1 and reboot
-```
-
-Builder machine:
+1. Change directory to the new web page Container file and the updated web page at `homepage-new`. You can open the `index.html` file in the `html` directory to see the updates to the homepage.
 
 ```bash
 cd ../homepage-create
-
-podman build -t quay.io/$QUAY_USER/homepage:1 -t quay.io/$QUAY_USER/homepage:latest -f Containerfile
-
-podman push quay.io/$QUAY_USER/homepage:1 && podman push quay.io/$QUAY_USER/homepage:latest
 ```
 
-Homepage vm:
-Login to the VM using ssh
+2. Build the new homepage images from the `Containerfile`.
+
+```bash
+podman build -t quay.io/$QUAY_USER/homepage:1 -t quay.io/$QUAY_USER/homepage:latest -f Containerfile
+```
+
+3. Push the image to the registry using the `demolab-homepage:1` and `demopage-homepage:latest` tags.
+
+```bash
+podman push quay.io/$QUAY_USER/homepage:latest && podman push quay.io/$QUAY_USER/homepage:1
+```
+
+4. Switch to the Homepage virtual machine and login to the `homepage` VM using ssh.
+
+```bash
+VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) && ssh bootc-user@$VM_IP
+```
+5. We are now going to use the `bootc switch` command to switch the virtual machine to the homepage image in the registry.
+
+> NOTE! If you didn't add the `$QUAY_USER` to the `.bashrc` file then run the following 
 
 ```bash
 QUAY_USER="your quay.io username not the email address"
+```
+```bash
 sudo bootc switch quay.io/$QUAY_USER/homepage:latest
+```
+
+6. Let us check the we have staged the new homepage image in the virtual machine.
+
+```bash
 sudo bootc status
 ```
 
@@ -421,20 +364,57 @@ sudo bootc status
         Digest: sha256:a48811...... \
        Version: 9.6 (2025-07-21 13:10:35.887718188 UTC)
 
-check homepage `curl localhost`
+7. and we check that we have the old RHEL 9 homepage without our new Image Mode content.
+
+```bash
+curl localhost
+```
+
+8. We need to reboot the virtual machine to activate the new layers and have our new home page.
 
 ```bash
 sudo reboot
 ```
 
-ssh login
+9. Login to the virtual machine to verify that we have a new updated Image Mode homepage.
 
 ```bash
 VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) && ssh bootc-user@$VM_IP
 curl localhost
 ```
 
-### Upgrade the RHEL image to RHEL 10
+10. Something went wrong! Our httpd service has failed during the update! Let us check the service.
+
+```bash
+sudo systemctl status httpd
+```
+
+11. There is no httpd service. We will rollback in the next section and fix the problem.
+
+#### Rollback and fix our homepage
+
+
+
+#### Build the database virtual machine
+
+We will then deploy a new virtual machine named `database` as this will be our new homepage http server.
+We will build the two images in one linked command and push it as the version 1 and latest images to our registry.
+
+```mermaid
+sequenceDiagram
+    %% Actors
+    participant containerfile_database_1 as Containerfile<br/>demolab-database:1
+    participant registry as Registry
+    participant database_vm_1 as database VM
+
+    %% MainVM Creationsu workflow
+    registry-->>containerfile_database_1: Build mariadb service image Containerfile<br/>from demolab-rhel:latest
+    containerfile_httpd_1->>registry: Push mariadb service v1<br/>as demolab-database:1 to the registry
+    containerfile_httpd_1->>registry: Push mariadb service v1<br/>as demolab-database:latest to the registry
+    registry-->>homepage_vm_1: Convert demolab-database:latest to Virtual Machine<br/> disk image and deploy VM database
+```
+
+### Upgrade the RHEL base image to RHEL 10
 
 ```mermaid
 sequenceDiagram
@@ -581,6 +561,56 @@ sudo reboot
 
 This is to show how we update the base OS on an existing deployment. Usually this will be done during an application, or in this case, a homepage update.
 Let's rollback again and then apply a new homepage whereby the RHEL 10 OS upgrade will automatically be pulled along with the update using the latest demolab-rhel image in the repository.
+
+---
+
+---
+
+---
+
+## The next part is old and will be replaced
+
+### Optional flows
+
+#### OPTIONAL: Upgrade the base RHEL 9.6 image in the registry to the latest
+
+Upgrade the RHEL 9.6 image to the latest RHEL 9.6 and push it to the registry. We will update the VM from this new image in the registry.
+
+```mermaid
+sequenceDiagram
+    %% Actors
+    %% participant Demolab96 as demolab-rhel:9.6-1747275992
+    %% participant HomepageVM1 as Deploy Homepage VM
+    participant Demolab96Upgrade as demolab-rhel:9.6-upgrade
+    participant PushRHEL96Upgrade as Push RHEL 9.6 upgrade
+    participant VMRHEL96UpgradeLatest as VM RHEL 9.6 upgrade latest
+    participant HomepageVM as Homepage VM
+
+    %% Upgrade path
+    Demolab96Upgrade-->>PushRHEL96Upgrade: Create an upgrade RHEL 9.6<br/>from the latest image 
+    PushRHEL96Upgrade->>VMRHEL96UpgradeLatest: push the upgrade image container<br/>as rhel:9.6 and rhel:latest
+    VMRHEL96UpgradeLatest->>HomepageVM: Apply upgrade in the VM using bootc upgrade and reboot
+```
+
+### OPTIONAL: Upgrade the VM to the latest RHEL 9.6 image and do a roll back
+
+Upgrade the VM to the latest RHEL 9.6 using the new image in the registry. We will rollback so that we actually use do the upgrade in the deployment of the home page.
+
+```mermaid
+sequenceDiagram
+    %% Actors
+    %% participant Demolab96 as demolab-rhel:9.6-1747275992
+    participant VMRHEL96UpgradeLatest as VM RHEL 9.6 upgrade latest
+    participant Rollback as Rollback
+    participant HomepageVM as Homepage VM
+
+    %% Upgrade path
+    PushRHEL96Upgrade->>VMRHEL96UpgradeLatest: push the upgrade image container<br/>as rhel:9.6 and rhel:latest
+    VMRHEL96UpgradeLatest->>HomepageVM: Apply upgrade in the VM using bootc upgrade and reboot
+    VMRHEL96UpgradeLatest->>Rollback: We can do this included in the<br/>homepage rollout, therefore let rollback
+    HomepageVM-->>Rollback: Rollback option using bootc rollback
+    Rollback->>HomepageVM1: Rollback to the base VM and reboot
+```
 
 ## Notes
 
