@@ -153,7 +153,7 @@ sequenceDiagram
     participant containerfile_rhel_96 as Containerfile<br/>demolab-rhel:9.6
     participant registry as Registry
 
-    %% MainVM Creationsu workflow
+    %% Base RHEL Creation workflow
     containerfile_rhel_96->>registry: Push base RHEL 9.6<br/>as demolab-rhel:9.6 image to the registry
     containerfile_rhel_96->>registry: Push base RHEL 9.6<br/>as demolab-rhel:latest image to the registry
 ```
@@ -198,7 +198,7 @@ sequenceDiagram
     participant registry as Registry
     participant homepage_vm_1 as homepage VM
 
-    %% MainVM Creationsu workflow
+    %% httpd VM Creation workflow
     registry-->>containerfile_httpd_1: Build httpd service image Containerfile<br/>from demolab-rhel:latest
     containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:1 to the registry
     containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:latest to the registry
@@ -307,8 +307,8 @@ sequenceDiagram
     participant registry as Registry
     participant homepage_vm_1 as homepage VM
 
-    %% MainVM Creationsu workflow
-    registry-->>containerfile_homepage_1: Build homepage image Containerfile<br/>from demolab-httpd:latest
+    %% New Homepage workflow
+    registry-->>containerfile_homepage_1: Build homepage image Containerfile<br/>from demolab-rhel:latest
     containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:1 to the registry
     containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:latest to the registry
     registry-->>homepage_vm_1: Switch the homepage Virtual Machine to the demolab-homepage:latest <br/>image to update the web page
@@ -393,7 +393,108 @@ sudo systemctl status httpd
 
 #### Rollback and fix our homepage
 
+In the previous section the httpd service wasn't in the image. This is due to a mistake we made in the Containerfile. First we will rollback so that we have the old homepage up and running and then we will fix the problem.
 
+```mermaid
+sequenceDiagram
+    %% Actors
+    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:1
+    participant registry as Registry
+    participant homepage_vm_1 as homepage VM
+
+    %% New Homepage workflow
+    homepage_vm_1->>homepage_vm_1: Rollback to the working homepage VM
+    containerfile_homepage_1->>containerfile_homepage_1: Fix the error in the Containerfile demolab-homepage
+    registry-->>containerfile_homepage_1: Build homepage image Containerfile<br/>from demolab-httpd:latest
+    containerfile_homepage_1->>registry: Push homepage image v2<br/>as demolab-homepage:2 to the registry
+    containerfile_homepage_1->>registry: Push homepage image v2<br/>as demolab-homepage:latest to the registry
+    registry-->>homepage_vm_1: Switch the homepage Virtual Machine to the demolab-homepage:latest <br/>image to update the web page
+```
+
+On our image builder server we will build a new Image Mode for RHEL 9 homepage image that we will deploy to the VM.
+
+1. If you aren't in the `homepage-new` directory then change directory to the new web page Container file and the updated web page at `homepage-new`. You can open the `index.html` file in the `html` directory to see the updates to the homepage.
+
+```bash
+cd ../homepage-create
+```
+
+2. We need to fix the Containerfile to pull the correct image from the registry. Use an editor to change the following line to
+
+```
+FROM quay.io/jvdbreggen/demolab-rhel:latest
+```
+
+change to
+
+```
+FROM quay.io/jvdbreggen/demolab-httpd:latest
+```
+
+3. Build the new homepage images from the `Containerfile` and tag to a new version `homepage:2`.
+
+```bash
+podman build -t quay.io/$QUAY_USER/homepage:2 -t quay.io/$QUAY_USER/homepage:latest -f Containerfile
+```
+
+4. Push the image to the registry using the `demolab-homepage:2` and `demopage-homepage:latest` tags.
+
+```bash
+podman push quay.io/$QUAY_USER/homepage:latest && podman push quay.io/$QUAY_USER/homepage:2
+```
+
+5. Switch to the Homepage virtual machine and login to the `homepage` VM using ssh.
+
+```bash
+VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) && ssh bootc-user@$VM_IP
+```
+
+6. We are now going to use the `bootc switch` command to switch the virtual machine to the homepage image in the registry.
+
+> NOTE! If you didn't add the `$QUAY_USER` to the `.bashrc` file then run the following 
+
+```bash
+QUAY_USER="your quay.io username not the email address"
+```
+```bash
+sudo bootc switch quay.io/$QUAY_USER/homepage:latest
+```
+
+7. Let us check the we have staged the new homepage image in the virtual machine.
+
+```bash
+sudo bootc status
+```
+
+> Staged image: quay.io/$QUAY_USER/homepage:latest \
+        Digest:  sha256:2be7b1...... \
+       Version: 9.6 (2025-07-21 15:43:03.624175287 UTC) \
+       \
+● Booted image: quay.io/$QUAY_USER/demolab-rhel:9.6 \
+        Digest: sha256:a48811...... \
+       Version: 9.6 (2025-07-21 13:10:35.887718188 UTC)
+
+8. and we check that we have the old RHEL 9 homepage without our new Image Mode content.
+
+```bash
+curl localhost
+```
+
+9. We need to reboot the virtual machine to activate the new layers and have our new home page.
+
+```bash
+sudo reboot
+```
+
+10. Login to the virtual machine to verify that we have a new updated Image Mode homepage.
+
+```bash
+VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) && ssh bootc-user@$VM_IP
+```
+
+```bash
+curl localhost
+```
 
 #### Build the database virtual machine
 
@@ -567,8 +668,6 @@ Let's rollback again and then apply a new homepage whereby the RHEL 10 OS upgrad
 ---
 
 ---
-
-## The next part is old and will be replaced
 
 ### Optional flows
 
