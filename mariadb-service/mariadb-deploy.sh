@@ -1,6 +1,8 @@
 #! /bin/bash
 # This script deploys a MariaDB database using Podman.
 
+QUAY_USER="your quay username"
+
 podman build -t quay.io/$QUAY_USER/demolab-database:latest -t quay.io/$QUAY_USER/demolab-database:rhel9 -f Containerfile
 podman push quay.io/$QUAY_USER/demolab-httpd:latest && podman push quay.io/$QUAY_USER/demolab-httpd:rhel9
 
