@@ -75,14 +75,14 @@ container_rhel96_1[demolab-rhel:9.6]-.->push_rhel96_1@{ shape: notch-rect, label
 push_rhel96_1-.->push_rhel96_latest1@{ shape: notch-rect, label: "Push RHEL 9.6 demolab image as demolab-rhel:latest" };
 
 push_rhel96_latest1-->demolab_httpd_1[demolab-httpd:latest]
-demolab_httpd_1-.->push_httpd_1@{ shape: notch-rect, label: "Push demolab-httpd:1" };
+demolab_httpd_1-.->push_httpd_1@{ shape: notch-rect, label: "Push demolab-httpd:rhel9" };
 push_httpd_1-.->push_httpd_latest1@{ shape: notch-rect, label: "Push demolab-httpd:latest" };
 
 push_httpd_latest1-->convert_httpd_to_homepageVM[Convert demolab-httpd to homepage qcow2 file];
 convert_httpd_to_homepageVM-->vm1homepage;
 
 vm1homepage-->container_v1_homepage[Build homepage v1 image];
-container_v1_homepage-.->push_v1_homepage@{ shape: notch-rect, label: "Push homepage:1" };
+container_v1_homepage-.->push_v1_homepage@{ shape: notch-rect, label: "Push homepage:rhel9" };
 
 push_v1_homepage-.->push_homepage-latest1@{ shape: notch-rect, label: "Push homepage:latest" };
 push_homepage-latest1-->vm1homepage_switch[Switch VM to use homepage:latest];
@@ -92,7 +92,7 @@ vm2homepage-->rollback1[Rollback to homepage v1]-->vm1homepage;
 
 vm1homepage-->fix_homepage1[Fix homepage Containerfile];
 fix_homepage1-->container_v2_homepage[Build homepage v2 image];
-container_v2_homepage-.->push_v2_homepage@{ shape: notch-rect, label: "Push homepage:2" };
+container_v2_homepage-.->push_v2_homepage@{ shape: notch-rect, label: "Push homepage:rhel9-fix" };
 
 push_v2_homepage-.->push_homepage_v2_latest@{ shape: notch-rect, label: "Push homepage:latest" };
 push_homepage_v2_latest-->vm2homepage_switch[Switch VM to use homepage:latest];
@@ -179,7 +179,7 @@ podman run -it --rm --name demolab-rhel-96 -p 8080:80 quay.io/$QUAY_USER/demolab
 3. Push the demolab base rhel image to our registry.
 
 ```bash
-podman push quay.io/jvdbreggen/demolab-rhel:latest && podman push quay.io/jvdbreggen/demolab-rhel:9.6
+podman push quay.io/$QUAY_USER/demolab-rhel:latest && podman push quay.io/$QUAY_USER/demolab-rhel:9.6
 ```
 
 > [!NOTE]
@@ -193,16 +193,35 @@ The following sequence diagram shows the steps that we will take to deploy our H
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant containerfile_httpd_1 as Containerfile<br/>demolab-httpd:1
-    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:1
+    participant containerfile_httpd_1 as Containerfile<br/>demolab-httpd:rhel9
+    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:rhel9
     participant registry as Registry
     participant homepage_vm_1 as homepage VM
 
     %% httpd VM Creation workflow
     registry-->>containerfile_httpd_1: Build httpd service image Containerfile<br/>from demolab-rhel:latest
-    containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:1 to the registry
+    containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:rhel9 to the registry
     containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:latest to the registry
     registry-->>homepage_vm_1: Convert demolab-httpd:latest to Virtual Machine<br/> disk image and deploy VM homepage
+```
+
+We need to create an image for our httpd service based on the RHEL 9 base image we created in the previous step.
+We will name our httpd service image `demolab-httpd:rhel9` and also tag it as our latest rhel base image as `demolab-httpd:latest`.
+
+1. Use podman to build httpd service image. Change to the folder where you have cloned this repo and use `podman build` to build the image from the `Containerfile`.
+
+```bash
+cd $HOME/imagemodedemo/httpd-service
+```
+
+```bash
+podman build -t quay.io/$QUAY_USER/demolab-httpd:latest -t quay.io/$QUAY_USER/demolab-httpd:rhel9 -f Containerfile
+```
+
+2. Push the demolab httpd service image to our registry.
+
+```bash
+podman push quay.io/$QUAY_USER/demolab-httpd:latest && podman push quay.io/$QUAY_USER/demolab-httpd:rhel9
 ```
 
 Now we are ready to create the virtual machine disk image that we are going to import into our new VM.
@@ -212,7 +231,7 @@ In some cases the podman command is unable to initially pull the image from the 
 1. Since we need to run podman as root to build the virtual machine qcow2 image file, we need to pull the image as root.
 
 ```bash
-sudo podman pull quay.io/$QUAY_USER/demolab-rhel:9.6
+sudo podman pull quay.io/$QUAY_USER/demolab-httpd:latest
 ```
 
 2. We need to use podman to run the Image Mode virtual machine disk builder to pull the image from the registry and create the virtual machine disk file.
@@ -229,7 +248,7 @@ sudo podman run \
 -v /var/lib/containers/storage:/var/lib/containers/storage registry.redhat.io/rhel9/bootc-image-builder:latest \
 --type qcow2 \
 --tls-verify=false \
-quay.io/$QUAY_USER/demolab-rhel:latest
+quay.io/$QUAY_USER/demolab-httpd:latest
 ```
 
 3. We will copy the new disk image to the libvirt images pool.
@@ -303,20 +322,20 @@ The following sequence diagram shows the steps that we will take to deploy our H
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:1
+    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:rhel9
     participant registry as Registry
     participant homepage_vm_1 as homepage VM
 
     %% New Homepage workflow
     registry-->>containerfile_homepage_1: Build homepage image Containerfile<br/>from demolab-rhel:latest
-    containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:1 to the registry
+    containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:rhel9 to the registry
     containerfile_homepage_1->>registry: Push homepage image v1<br/>as demolab-homepage:latest to the registry
     registry-->>homepage_vm_1: Switch the homepage Virtual Machine to the demolab-homepage:latest <br/>image to update the web page
 ```
 
 On our image builder server we will build a new Image Mode for RHEL 9 homepage image that we will deploy to the VM.
 
-1. Change directory to the new web page Container file and the updated web page at `homepage-new`. You can open the `index.html` file in the `html` directory to see the updates to the homepage.
+1. Change directory to the new web page Container file and the *RHEL 9 Image Mode* web page at `homepage-rhel9`. You can open the `index.html` file in the `html` directory to see the updates to the homepage.
 
 ```bash
 cd ../homepage-create
@@ -325,13 +344,13 @@ cd ../homepage-create
 2. Build the new homepage images from the `Containerfile`.
 
 ```bash
-podman build -t quay.io/$QUAY_USER/homepage:1 -t quay.io/$QUAY_USER/homepage:latest -f Containerfile
+podman build -t quay.io/$QUAY_USER/demolab-homepage:rhel9 -t quay.io/$QUAY_USER/demolab-homepage:latest -f Containerfile
 ```
 
-3. Push the image to the registry using the `demolab-homepage:1` and `demopage-homepage:latest` tags.
+3. Push the image to the registry using the `demolab-homepage:rhel9` and `demopage-homepage:latest` tags.
 
 ```bash
-podman push quay.io/$QUAY_USER/homepage:latest && podman push quay.io/$QUAY_USER/homepage:1
+podman push quay.io/$QUAY_USER/demolab-homepage:latest && podman push quay.io/$QUAY_USER/demolab-homepage:rhel9
 ```
 
 4. Switch to the Homepage virtual machine and login to the `homepage` VM using ssh.
@@ -346,8 +365,9 @@ VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) &
 ```bash
 QUAY_USER="your quay.io username not the email address"
 ```
+
 ```bash
-sudo bootc switch quay.io/$QUAY_USER/homepage:latest
+sudo bootc switch quay.io/$QUAY_USER/demolab-homepage:latest
 ```
 
 6. Let us check the we have staged the new homepage image in the virtual machine.
@@ -398,7 +418,7 @@ In the previous section the httpd service wasn't in the image. This is due to a 
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:1
+    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:rhel9
     participant registry as Registry
     participant homepage_vm_1 as homepage VM
 
@@ -406,14 +426,14 @@ sequenceDiagram
     homepage_vm_1->>homepage_vm_1: Rollback to the working homepage VM
     containerfile_homepage_1->>containerfile_homepage_1: Fix the error in the Containerfile demolab-homepage
     registry-->>containerfile_homepage_1: Build homepage image Containerfile<br/>from demolab-httpd:latest
-    containerfile_homepage_1->>registry: Push homepage image v2<br/>as demolab-homepage:2 to the registry
+    containerfile_homepage_1->>registry: Push homepage image v2<br/>as demolab-homepage:rhel9-fix to the registry
     containerfile_homepage_1->>registry: Push homepage image v2<br/>as demolab-homepage:latest to the registry
     registry-->>homepage_vm_1: Switch the homepage Virtual Machine to the demolab-homepage:latest <br/>image to update the web page
 ```
 
 On our image builder server we will build a new Image Mode for RHEL 9 homepage image that we will deploy to the VM.
 
-1. If you aren't in the `homepage-new` directory then change directory to the new web page Container file and the updated web page at `homepage-new`. You can open the `index.html` file in the `html` directory to see the updates to the homepage.
+1. If you aren't in the `homepage-rhel9` directory then change directory to the new web page Container file and the updated web page at `homepage-rhel9`. You can open the `index.html` file in the `html` directory to see the updates to the homepage.
 
 ```bash
 cd ../homepage-create
@@ -422,25 +442,25 @@ cd ../homepage-create
 2. We need to fix the Containerfile to pull the correct image from the registry. Use an editor to change the following line to
 
 ```
-FROM quay.io/jvdbreggen/demolab-rhel:latest
+FROM quay.io/$QUAY_USER/demolab-rhel:latest
 ```
 
 change to
 
 ```
-FROM quay.io/jvdbreggen/demolab-httpd:latest
+FROM quay.io/$QUAY_USER/demolab-httpd:latest
 ```
 
-3. Build the new homepage images from the `Containerfile` and tag to a new version `homepage:2`.
+3. Build the new homepage images from the `Containerfile` and tag to a new version `homepage:rhel9-fix`.
 
 ```bash
-podman build -t quay.io/$QUAY_USER/homepage:2 -t quay.io/$QUAY_USER/homepage:latest -f Containerfile
+podman build -t quay.io/$QUAY_USER/demolab-homepage:rhel9-fix -t quay.io/$QUAY_USER/demolab-homepage:latest -f Containerfile
 ```
 
-4. Push the image to the registry using the `demolab-homepage:2` and `demopage-homepage:latest` tags.
+4. Push the image to the registry using the `demolab-homepage:rhel9-fix` and `demopage-homepage:latest` tags.
 
 ```bash
-podman push quay.io/$QUAY_USER/homepage:latest && podman push quay.io/$QUAY_USER/homepage:2
+podman push quay.io/$QUAY_USER/demolab-homepage:latest && podman push quay.io/$QUAY_USER/demolab-homepage:rhel9-fix
 ```
 
 5. Switch to the Homepage virtual machine and login to the `homepage` VM using ssh.
@@ -457,7 +477,7 @@ VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) &
 QUAY_USER="your quay.io username not the email address"
 ```
 ```bash
-sudo bootc switch quay.io/$QUAY_USER/homepage:latest
+sudo bootc switch quay.io/$QUAY_USER/demolab-homepage:latest
 ```
 
 7. Let us check the we have staged the new homepage image in the virtual machine.
@@ -498,21 +518,46 @@ curl localhost
 
 #### Build the database virtual machine
 
-We will then deploy a new virtual machine named `database` as this will be our new homepage http server.
+We will then deploy a new virtual machine named `database` as this will be our new demo database server.
 We will build the two images in one linked command and push it as the version 1 and latest images to our registry.
 
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant containerfile_database_1 as Containerfile<br/>demolab-database:1
+    participant containerfile_database_1 as Containerfile<br/>demolab-database:rhel9
     participant registry as Registry
     participant database_vm_1 as database VM
 
     %% MainVM Creationsu workflow
     registry-->>containerfile_database_1: Build mariadb service image Containerfile<br/>from demolab-rhel:latest
-    containerfile_httpd_1->>registry: Push mariadb service v1<br/>as demolab-database:1 to the registry
+    containerfile_httpd_1->>registry: Push mariadb service v1<br/>as demolab-database:rhel9 to the registry
     containerfile_httpd_1->>registry: Push mariadb service v1<br/>as demolab-database:latest to the registry
     registry-->>homepage_vm_1: Convert demolab-database:latest to Virtual Machine<br/> disk image and deploy VM database
+```
+
+We are following a less complex deployment for the database server than the deployment we did for the homepage.
+We are going to deploy the mariadb service using a bash script to automate the deployment.
+
+In the `mariadb_service` directory we need to update the QUAY_USER variable with your quay user id.
+
+1. Change to the `mariadb-service` directory.
+
+```bash
+cd $HOME/imagemodedemo/mariadb-service
+```
+
+2. Ensure that the `mariadb-deploy.sh` file is executable.
+
+```bash
+chmod +x mariadb-deploy.sh
+```
+
+3. Edit the mariadb-deploy.sh file and change the entry for the QUAY_USER to your quay.io user name.
+
+4. Run the bash script `mariadb-deploy.sh` to create the database images and the database VM.
+
+```bash
+./mariadb_deploy.sh
 ```
 
 ### Upgrade the RHEL base image to RHEL 10
@@ -525,7 +570,7 @@ sequenceDiagram
     participant VMRHEL10UpgradeLatest as VM RHEL 10.0 upgrade latest
     participant Demolab10 as demolab-rhel:10.0
     participant PushRHEL10 as Push demolab-rhel:10.0
-    participant HomepageUpdate as homepage-update
+    participant HomepageUpdate as homepage-rhel10
     participant PushHomepageUpdate as Push homepage:2
     participant HomepageVM as Homepage VM
 
@@ -536,8 +581,8 @@ sequenceDiagram
     %% RHEL 10 path
     Demolab10-->>PushRHEL10: Create a new RHEL 10.0 image<br/>and push as demolab-rhel:10.0<br/>and demolab-rhel:latest
     PushRHEL10-->>HomepageUpdate: push demolab-rhel:10.0 as the<br/>latest image and prepare<br/>the homepage update Containre file
-    HomepageUpdate-->>PushHomepageUpdate: Build the new homepage:2<br/>image with the new<br/>RHEL 10.0 latest and a homepage update
-    PushHomepageUpdate->>HomepageVM: Deploy homepage:2 using bootc upgrade
+    HomepageUpdate-->>PushHomepageUpdate: Build the new homepage:rhel10<br/>image with the new<br/>RHEL 10.0 latest and a homepage update
+    PushHomepageUpdate->>HomepageVM: Deploy homepage:rhel10 using bootc upgrade
 ```
 
 ### Upgrade the VM to RHEL 10 and update the homepage
@@ -551,15 +596,15 @@ sequenceDiagram
     %% participant VMRHEL10UpgradeLatest as VM RHEL 10.0 upgrade latest
     participant Demolab10 as demolab-rhel:10.0
     participant PushRHEL10 as Push demolab-rhel:10.0
-    participant HomepageUpdate as homepage-update
-    participant PushHomepageUpdate as Push homepage:2
+    participant HomepageUpdate as homepage-rhel10
+    participant PushHomepageUpdate as Push homepage:rhel10
     participant HomepageVM as Homepage VM
 
     %% RHEL 10 path
     Demolab10-->>PushRHEL10: Create a new RHEL 10.0 image<br/>and push as demolab-rhel:10.0<br/>and demolab-rhel:latest
     PushRHEL10-->>HomepageUpdate: push demolab-rhel:10.0 as the<br/>latest image and prepare<br/>the homepage update Containre file
-    HomepageUpdate-->>PushHomepageUpdate: Build the new homepage:2<br/>image with the new<br/>RHEL 10.0 latest and a homepage update
-    PushHomepageUpdate->>HomepageVM: Deploy homepage:2 using bootc upgrade
+    HomepageUpdate-->>PushHomepageUpdate: Build the new homepage:rhel10<br/>image with the new<br/>RHEL 10.0 latest and a homepage update
+    PushHomepageUpdate->>HomepageVM: Deploy homepage:rhel10 using bootc upgrade
 ```
 
 ```bash
@@ -574,62 +619,41 @@ podman build -t quay.io/$QUAY_USER/demolab-rhel:latest -t quay.io/$QUAY_USER/dem
 podman push quay.io/$QUAY_USER/demolab-rhel:latest && podman push quay.io/$QUAY_USER/demolab-rhel:10.0
 ```
 
-In the VM
-
 ```bash
-QUAY_USER="your quay.io username not the email address"
-[bootc-user@localhost ~]$ sudo bootc switch quay.io/$QUAY_USER/demolab-rhel:latest
+cd ../httpd-service
 ```
 
-The homepage is lost, we need to roll back
-
 ```bash
-sudo bootc status
+podman build -t quay.io/$QUAY_USER/demolab-httpd:latest -t quay.io/$QUAY_USER/demolab-httpd:rhel10 -f Containerfile
 ```
 
->● Booted image: quay.io/$QUAY_USER/demolab-rhel:latest \
-    Digest:  sha256:7c46d6....... \
-    Version: 10.0 (2025-07-21 16:04:36.100285429 UTC) \
-\
-  Rollback image: quay.io/$QUAY_USER/homepage:latest \
-          Digest: sha256:2be7b1...... \
-         Version: 9.6 (2025-07-21 15:43:03.624175287 UTC)
-
 ```bash
-sudo bootc rollback
-sudo reboot
-sudo bootc status
+podman push quay.io/$QUAY_USER/demolab-httpd:latest && podman push quay.io/$QUAY_USER/demolab-httpd:rhel10
 ```
 
->● Booted image: quay.io/jvdbreggen/homepage:latest\
-        Digest: sha256:2be7b1...... \
-       Version: 9.6 (2025-07-21 15:43:03.624175287 UTC) \
- \
-  Rollback image: quay.io/jvdbreggen/demolab-rhel:latest \
-          Digest: sha256:7c46d6...... \
-         Version: 10.0 (2025-07-21 16:04:36.100285429 UTC)
-
-The note below is for the old flow, I think I have it fixed.
-> [!NOTE]
-> I tried to do an upgrade and then with the homepage still on RHEL 9 to do a rollback and the update the homepage and deploy RHEL 10 again. This breaks SSH.
-
-we need to do this another way
-in the image builder machine
-our container file already points to the demolab-rhel:latest image in the repo. we need to do an update
+```bash
+cd ../homepage-rhel10
+```
 
 ```bash
-cd ../homepage-create
-podman build -t quay.io/$QUAY_USER/homepage:2 -t quay.io/$QUAY_USER/homepage:latest -f Containerfile
-podman push quay.io/$QUAY_USER/homepage:1 && podman push quay.io/$QUAY_USER/homepage:latest
+podman build -t quay.io/$QUAY_USER/demolab-homepage:latest -t quay.io/$QUAY_USER/demolab-homepage:rhel10 -f Containerfile
+```
+
+```bash
+podman push quay.io/$QUAY_USER/demolab-homepage:latest && podman push quay.io/$QUAY_USER/demolab-homepage:rhel10
 ```
 
 in the homepage VM
 
 ```bash
-sudo bootc upgrage --check
+VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) && ssh bootc-user@$VM_IP
 ```
 
->Update available for: docker://quay.io/jvdbreggen/homepage:latest \
+```bash
+sudo bootc upgrade --check
+```
+
+>Update available for: docker://quay.io/$QUAY_USER/homepage:latest \
   Version: 10.0 \
   Digest: sha256:0c5416...... \
 Total new layers: 77    Size: 885.4 MB \
@@ -641,6 +665,8 @@ Only a few layers, I thought we upgrade to RHEL 10?
 
 ```bash
 sudo bootc upgrade
+
+```bash
 sudo bootc status
 ```
 
