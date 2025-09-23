@@ -1,4 +1,5 @@
-FROM quay.io/jvdbreggen/demolab-rhel:latest
+# FROM quay.io/jvdbreggen/base-rhel:latest
+FROM quay.io/jvdbreggen/demolab-httpd:latest
 
 ADD html/ /usr/share/www/html
 
