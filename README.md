@@ -4,7 +4,8 @@ Image Mode Demo scripts, Containerfiles (Dockerfiles), webpages and workflows to
 Draft container files, index.html, and config files to get an Image Mode workshop story going.
 
 > [!NOTE]
-> Branch build4 contains the latest updates
+> The RHEL 10 upgrade has the correct commands, the instructions and the diagrams are out of date and will be updated. Some of the RHEL 10 Containerfiles will also be updated to handle, for example, the RH Subscription.
+>The Optional section also will be updated at a later stage, along with more tips and tricks.
 
 ## The workflow
 
