@@ -12,8 +12,7 @@ Once the services VM has been deployed we can then create the application images
 Then we will create a new RHEL 10 base image which we will use to upgrade the http and database services images, and when we then deploy a new web page for RHEL 10 we will pull the new RHEL 10 base as part of the upgrade. Similar we will do a more simple upgrade for the database.
 
 > [!NOTE]
-> The RHEL 10 upgrade has the correct commands, the instructions and the diagrams are out of date and will be updated. Some of the RHEL 10 Containerfiles will also be updated to handle, for example, the RH Subscription.
->The Optional section also will be updated at a later stage, along with more tips and tricks.
+>The Optional section also will be updated at a later stage, along with more tips and tricks, and using Podman Desktop.
 
 ## The workflow
 
@@ -317,8 +316,8 @@ sudo bootc status
 ```
 
 >Booted image: quay.io/$QUAY_USER/demolab-rhel:9.6 \
->Digest: sha256:a48811e05........... \
->Version: 9.6 (2025-07-21 13:10:35.887718188 UTC)
+    Digest: sha256:a48811e05........... \
+    Version: 9.6 (2025-07-21 13:10:35.887718188 UTC)
 
 Our virtual machine based on Image Mode is now running and we are ready to make updates to the web page.
 
@@ -588,7 +587,7 @@ sequenceDiagram
 cd ../demolab-rhel10.0
 ```
 
-2. Use Podman build to build the new RHEL 10 image and tag it as demolab-rhel:latest and demolab-rhel:10.0
+2. Use Podman build to build the new RHEL 10 image and tag it as `demolab-rhel:latest` and `demolab-rhel:10.0`.
 
 ```bash
 podman build -t quay.io/$QUAY_USER/demolab-rhel:latest -t quay.io/$QUAY_USER/demolab-rhel:10.0 -f Containerfile
@@ -602,7 +601,7 @@ podman push quay.io/$QUAY_USER/demolab-rhel:latest && podman push quay.io/$QUAY_
 
 ### Upgrade the VM to RHEL 10 and update the homepage
 
-Next we are going to build the services images on RHEL 10 and upgrade the homepage and database.
+Next we are going to build the httpd services image on RHEL 10 and upgrade the homepage VM.
 
 ```mermaid
 sequenceDiagram
@@ -658,7 +657,7 @@ podman build -t quay.io/$QUAY_USER/demolab-homepage:latest -t quay.io/$QUAY_USER
 podman push quay.io/$QUAY_USER/demolab-homepage:latest && podman push quay.io/$QUAY_USER/demolab-homepage:rhel10
 ```
 
-7. No we switch to the homepage VM, we will use our special ssh command to log into the VM.
+7. No we switch to the `homepage` VM, we will use our special ssh command to log into the VM.
 
 ```bash
 VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) && ssh bootc-user@$VM_IP
@@ -725,6 +724,8 @@ sudo bootc status
 This is to show how we update the base OS on an existing deployment. Usually this will be done during an application, or in this case, a homepage update.
 
 ### Upgrade the database server to RHEL 10
+
+Similar we are going to build the database services image on RHEL 10 and upgrade the database VM. Since we don't have any application tied to the database we can upgrade our database VM directly from the database services image.
 
 ```mermaid
 sequenceDiagram
