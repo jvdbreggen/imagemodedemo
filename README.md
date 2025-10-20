@@ -11,9 +11,6 @@ Once the services VM has been deployed we can then create the application images
 
 Then we will create a new RHEL 10 base image which we will use to upgrade the http and database services images, and when we then deploy a new web page for RHEL 10 we will pull the new RHEL 10 base as part of the upgrade. Similar we will do a more simple upgrade for the database.
 
-> [!NOTE]
->The Optional section also will be updated at a later stage, along with more tips and tricks, and using Podman Desktop.
-
 ## The workflow
 
 The overall plan of the workflow is to create a base RHEL "golden image" that we will call `demolab-rhel` and will base all our Virtual Machine (VM) KVM deployments from this image.
@@ -23,7 +20,6 @@ The diagram below shows the various flows that can be used during this demo.
 
 There is additional optional parts that is described in the next section. First, there is a flow for minor release upgrades that can be incorporated into the overall workflow. Second, we use the `demolab-rhel` base image to deploy a `demolab-database` server and maintain it the same way as our `demolab-homepage` server.
 As a future aspect I want to add an Ansible playbook to use Ansible automation to upgrade the servers.
-
 
 The flow is as follow:
 
@@ -124,9 +120,6 @@ This optional part to the workflow allows you to start with an early release of 
 
 ## Building the demo
 
-> [!CAUTION]
-> The commands need to be updated for all the sections
-
 We include the httpd service from the start in the base image.
 An alternative is to create a vanilla base image with only our login user in the base image and then do the steps to install httpd service.
 
@@ -144,7 +137,7 @@ Using Quay we recommend that when you push the images to Quay that you make the 
 ```bash
 QUAY_USER="your quay.io username not the email address"
 REDHAT_USER="your Red Hat username, full email address may no longer work"
-podman login -u $REDHAT_USER quay.io -p $REDHAT_PASSWORD && podman login -u $REDHAT_USER registry.redhat.io -p $REDHAT_PASSWORD
+podman login -u $QUAY_USER quay.io -p $QUAY_PASSWORD && podman login -u $REDHAT_USER registry.redhat.io -p $REDHAT_PASSWORD
 sudo mkdir -p /run/containers/0
 sudo cp /run/user/1000/containers/auth.json /run/containers/0/auth.json #The user number 1000 may be different for your user
 ```
