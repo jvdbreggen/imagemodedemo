@@ -3,8 +3,8 @@
 
 QUAY_USER="your quay username"
 
-podman build -t quay.io/$QUAY_USER/demolab-database:latest -t quay.io/$QUAY_USER/demolab-database:rhel9 -f Containerfile
-podman push quay.io/$QUAY_USER/demolab-httpd:latest && podman push quay.io/$QUAY_USER/demolab-httpd:rhel9
+podman build -t quay.io/$QUAY_USER/demolab-database:latest -t quay.io/$QUAY_USER/demolab-database:rhel9.6 -f Containerfile
+podman push quay.io/$QUAY_USER/demolab-database:latest && podman push quay.io/$QUAY_USER/demolab-database:rhel9.6
 
 sudo podman pull quay.io/$QUAY_USER/demolab-database:latest
 sudo podman run \
@@ -20,7 +20,7 @@ sudo podman run \
 --tls-verify=false \
 quay.io/$QUAY_USER/demolab-database:latest
 
-mv qcow/demolab-database.qcow2 /var/lib/libvirt/images/database.qcow2
+sudo mv qcow2/disk.qcow2 /var/lib/libvirt/images/database.qcow2
 
 sudo virt-install \
   --connect qemu:///system \
