@@ -11,6 +11,118 @@ Once the services VM has been deployed we can then create the application images
 
 Then we will create a new RHEL 10 base image which we will use to upgrade the http and database services images, and when we then deploy a new web page for RHEL 10 we will pull the new RHEL 10 base as part of the upgrade. Similar we will do a more simple upgrade for the database.
 
+## The Build
+
+The first build will be on RHEL 9.6 where we build a base `demolab-rhel:9.6` image. We then build a second pair of images for our specific services, the httpd and mariadb services. Now we can deploy these services images to Virtual Machines. We then create a new homepage image that has more details on Image Mode, and use the `bootc switch` command to update our VM to the latest home page.
+
+```mermaid
+classDiagram
+direction TB
+    class demolab-rhel9.6 {
+        FROM rhel9/rhel-bootc(latest)
+    }
+
+    class httpd9.6 {
+        httpd service
+        demolab-rhel(9.6)
+    }
+
+    class database9.6 {
+        mariadb service
+        demolab-rhel(9.6)
+    }
+
+    class homepage9.6 {
+        rhel 9 Image mode homepage
+        httpd(service)
+        demolab-rhel(9.6)
+    }
+
+    class VMhomepage {
+        httpd service
+        demolab-rhel(9.6)
+    }
+
+    class VMdatabase {
+        mariadb service
+        demolab-rhel(9.6)
+    }
+    class VMhomepageImageMode {
+        rhel 9 Image mode homepage
+        httpd(service)
+        demolab-rhel(9.6)
+    }
+
+    note for VMhomepageImageMode "bootc switch"
+
+    demolab-rhel9.6 ..|> httpd9.6
+    demolab-rhel9.6 ..|> database9.6
+    httpd9.6 ..|> homepage9.6
+    httpd9.6 --|> VMhomepage
+    VMhomepage ..|> VMhomepageImageMode
+    homepage9.6 --|> VMhomepageImageMode
+    database9.6 --|> VMdatabase
+```
+
+Next we create a new RHEL 10.0 base image, from which we will upgrade our Virtual Machines. We need to go through the same steps, create an updated pair of services images for the httpd and mariadb services. We can upgrade our database service using `bootc upgrade` but before we upgrade our homepage Virtual Machine we also want to update the content to RHEL 10. We update our html source and build a new homepage image and then `bootc upgrade` our virtual machine.
+
+```mermaid
+classDiagram
+direction TB
+    class VMdatabase9.6 {
+        mariadb service
+        demolab-rhel(9.6)
+    }
+
+    class VMhomepage9.6 {
+        rhel 9 Image mode homepage
+        httpd(service)
+        demolab-rhel(9.6)
+    }
+
+    class demolab-rhel10.0 {
+        FROM rhel10/rhel-bootc(latest)
+    }
+
+    class httpd10.0 {
+        httpd service
+        demolab-rhel(10.0)
+    }
+
+    class database10.0 {
+        mariadb service
+        demolab-rhel(10.0)
+    }
+
+    class homepage10.0 {
+        rhel 10 Image mode homepage
+        httpd(service)
+        demolab-rhel(10.0)
+    }
+
+    class VMhomepage10.0 {
+        rhel 10 Image mode homepage
+        httpd(service)
+        demolab-rhel(10.0)
+    }
+
+    class VMdatabase10.0 {
+        mariadb service
+        demolab-rhel(10.0)
+    }
+
+    note for VMhomepage10.0 "bootc upgrade"
+    note for VMdatabase10.0 "bootc upgrade"
+  
+    demolab-rhel10.0 ..|> httpd10.0
+    httpd10.0 ..|> homepage10.0
+    VMhomepage9.6 ..|> VMhomepage10.0
+    homepage10.0 --> VMhomepage10.0
+    demolab-rhel10.0 ..|> database10.0
+    VMdatabase9.6 ..|> VMdatabase10.0
+    database10.0 --|> VMdatabase10.0
+```
+
 ## The workflow
 
 The overall plan of the workflow is to create a base RHEL "golden image" that we will call `demolab-rhel` and will base all our Virtual Machine (VM) KVM deployments from this image.
@@ -133,6 +245,7 @@ In this workshop we will be pushing to Red Hat Quay.
 We recommend that you set two variables in the terminal you are using for the logins to the Red Hat Registry and Quay.io.
 
 Using Quay we recommend that when you push the images to Quay that you make the repositories *public* by selecting the repository and using the Actions to set *Make Public*
+Replace `$QUAY_PASSWORD` and `REDHAT_PASSWORD` with your passowrds. If you decide to use these variables, we recommend you hash encrypt the passwords in the variables.
 
 ```bash
 QUAY_USER="your quay.io username not the email address"
@@ -171,7 +284,7 @@ cd $HOME/imagemodedemo/demolab-rhel9.6
 podman build -t quay.io/$QUAY_USER/demolab-rhel:latest -t quay.io/$QUAY_USER/demolab-rhel:9.6 -f Containerfile
 ```
 
-2. If we want to test our image we can run it in a container. You can log in with user `bootc-user` and password `redhat` and run `curl localhost` to test if the httpd service is running and you can see the base image welcome page. You can stop and exit the container with `sudo halt`.
+2. If we want to test our image we can run it in a container. You can log in with user `bootc-user` and password `redhat` and run `curl localhost` to test if the httpd service is running and you can see the base image welcome page. You can stop and exit the container with `sudo halt`. We are going to run our container in the next step to check that the httpd service is running and that we can see our homepage before deploying it to a VM.
 
 ```bash
 podman run -it --rm --name demolab-rhel-96 -p 8080:80 quay.io/$QUAY_USER/demolab-rhel:9.6
@@ -194,20 +307,20 @@ The following sequence diagram shows the steps that we will take to deploy our H
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant containerfile_httpd_1 as Containerfile<br/>demolab-httpd:rhel9
-    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:rhel9
+    participant containerfile_httpd_1 as Containerfile<br/>demolab-httpd:rhel9.6
+    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:rhel9.6
     participant registry as Registry
     participant homepage_vm_1 as homepage VM
 
     %% httpd VM Creation workflow
     registry-->>containerfile_httpd_1: Build httpd service image Containerfile<br/>from demolab-rhel:latest
-    containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:rhel9 to the registry
+    containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:rhel9.6 to the registry
     containerfile_httpd_1->>registry: Push httpd service v1<br/>as demolab-httpd:latest to the registry
     registry-->>homepage_vm_1: Convert demolab-httpd:latest to Virtual Machine<br/> disk image and deploy VM homepage
 ```
 
 We need to create an image for our httpd service based on the RHEL 9 base image we created in the previous step.
-We will name our httpd service image `demolab-httpd:rhel9` and also tag it as our latest rhel base image as `demolab-httpd:latest`.
+We will name our httpd service image `demolab-httpd:rhel9.6` and also tag it as our latest rhel base image as `demolab-httpd:latest`.
 
 1. Use podman to build httpd service image. Change to the folder where you have cloned this repo and use `podman build` to build the image from the `Containerfile`.
 
@@ -216,14 +329,22 @@ cd $HOME/imagemodedemo/httpd-service
 ```
 
 ```bash
-podman build -t quay.io/$QUAY_USER/demolab-httpd:latest -t quay.io/$QUAY_USER/demolab-httpd:rhel9 -f Containerfile
+podman build -t quay.io/$QUAY_USER/demolab-httpd:latest -t quay.io/$QUAY_USER/demolab-httpd:rhel9.6 -f Containerfile
 ```
 
 2. Push the demolab httpd service image to our registry.
 
 ```bash
-podman push quay.io/$QUAY_USER/demolab-httpd:latest && podman push quay.io/$QUAY_USER/demolab-httpd:rhel9
+podman push quay.io/$QUAY_USER/demolab-httpd:latest && podman push quay.io/$QUAY_USER/demolab-httpd:rhel9.6
 ```
+
+3. If we want to test our image we can run it in a container.
+```bash
+podman run -it --rm --name demolab-httpd-96 -p 8080:80 quay.io/$QUAY_USER/demolab-httpd:rhel9.6
+```
+
+4. You can log in with user `bootc-user` and password `redhat` and run `curl localhost` to test if the httpd service is running and you can see the base image welcome page. You can stop and exit the container with `sudo halt`. You can test the homepage in a browser on the local machine by using the URL `http
+
 
 Now we are ready to create the virtual machine disk image that we are going to import into our new VM.
 
@@ -359,6 +480,7 @@ podman push quay.io/$QUAY_USER/demolab-homepage:latest && podman push quay.io/$Q
 ```bash
 VM_IP=$(sudo virsh -q domifaddr homepage | awk '{ print $4 }' | cut -d"/" -f1) && ssh bootc-user@$VM_IP
 ```
+
 5. We are now going to use the `bootc switch` command to switch the virtual machine to the homepage image in the registry.
 
 > NOTE! If you didn't add the `$QUAY_USER` to the `.bashrc` file then run the following 
@@ -531,7 +653,7 @@ sequenceDiagram
 
     %% MainVM Creationsu workflow
     registry-->>containerfile_database_1: Build mariadb service image Containerfile<br/>from demolab-rhel:latest
-    containerfile_httpd_1->>registry: Push mariadb service v1<br/>as demolab-database:rhel9 to the registry
+    containerfile_httpd_1->>registry: Push mariadb service v1<br/>as demolab-database:rhel9.6 to the registry
     containerfile_httpd_1->>registry: Push mariadb service v1<br/>as demolab-database:latest to the registry
     registry-->>homepage_vm_1: Convert demolab-database:latest to Virtual Machine<br/> disk image and deploy VM database
 ```
@@ -561,7 +683,9 @@ chmod +x mariadb-deploy.sh
 ./mariadb_deploy.sh
 ```
 
-### Upgrade the RHEL base image to RHEL 10
+### Create a new RHEL 10 base image
+
+We are going to create a new demolab-rhel base image that is based on the latest RHEL, version 10. This base image we are going to use to upgrade our services, httpd and mariadb. We created a new RHEL 10 homepage and then will upgrade the VMs to RHEL 10.
 
 ```mermaid
 sequenceDiagram
@@ -599,17 +723,17 @@ Next we are going to build the httpd services image on RHEL 10 and upgrade the h
 ```mermaid
 sequenceDiagram
     %% Actors
-    participant containerfile_httpd_1 as Containerfile<br/>demolab-httpd:rhel10
-    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:rhel10
+    participant containerfile_httpd_1 as Containerfile<br/>demolab-httpd:rhel10.0
+    participant containerfile_homepage_1 as Containerfile<br/>demolab-homepage:rhel10.0
     participant registry as Registry
     participant homepage_vm_1 as homepage VM
 
     %% httpd VM Creation workflow
     registry-->>containerfile_httpd_1: Build httpd service image Containerfile<br/>from demolab-rhel:latest
-    containerfile_httpd_1->>registry: Push httpd service v2<br/>as demolab-httpd:rhel10 to the registry
+    containerfile_httpd_1->>registry: Push httpd service v2<br/>as demolab-httpd:rhel10.0 to the registry
     containerfile_httpd_1->>registry: Push httpd service v2<br/>as demolab-httpd:latest to the registry
     registry-->>containerfile_homepage_1: Build homepage image Containerfile<br/>from demolab-httpd:latest
-    containerfile_homepage_1->>registry: Push homepage image v3<br/>as demolab-homepage:rhel10 to the registry
+    containerfile_homepage_1->>registry: Push homepage image v3<br/>as demolab-homepage:rhel10.0 to the registry
     containerfile_homepage_1->>registry: Push homepage image v3<br/>as demolab-homepage:latest to the registry
     registry-->>homepage_vm_1: Upgrade the homepage Virtual Machine to the demolab-homepage:latest <br/>image to update the web page
 ```
@@ -620,16 +744,16 @@ sequenceDiagram
 cd ../httpd-service
 ```
 
-2. Use Podman build to build the new httpd images and we will tag the images as `demolab-httpd:latest` and `demolab-httpd:rhel10`. It is best practice to tag these images with version numbers or date stamps, but for the demo it makes it easier to track the RHEL version we are using.
+2. Use Podman build to build the new httpd images and we will tag the images as `demolab-httpd:latest` and `demolab-httpd:rhel10.0`. It is best practice to tag these images with version numbers or date stamps, but for the demo it makes it easier to track the RHEL version we are using.
 
 ```bash
-podman build -t quay.io/$QUAY_USER/demolab-httpd:latest -t quay.io/$QUAY_USER/demolab-httpd:rhel10 -f Containerfile
+podman build -t quay.io/$QUAY_USER/demolab-httpd:latest -t quay.io/$QUAY_USER/demolab-httpd:rhel10.0 -f Containerfile
 ```
 
 3. Push the new httpd services to the registry.
 
 ```bash
-podman push quay.io/$QUAY_USER/demolab-httpd:latest && podman push quay.io/$QUAY_USER/demolab-httpd:rhel10
+podman push quay.io/$QUAY_USER/demolab-httpd:latest && podman push quay.io/$QUAY_USER/demolab-httpd:rhel10.0
 ```
 
 4. Change to the homepage-rhel10 directory. This has an updated homepage for RHEL 10 with RHEL 10 logos.
@@ -743,13 +867,13 @@ cd ../mariadb-service
 2. Use Podman build to build the new httpd images and we will tag the images as `demolab-database:latest` and `demolab-database:rhel10`. It is best practice to tag these images with version numbers or date stamps, but for the demo it makes it easier to track the RHEL version we are using.
 
 ```bash
-podman build -t quay.io/$QUAY_USER/demolab-database:latest -t quay.io/$QUAY_USER/demolab-database:rhel10 -f Containerfile
+podman build -t quay.io/$QUAY_USER/demolab-database:latest -t quay.io/$QUAY_USER/demolab-database:rhel10.0 -f Containerfile
 ```
 
 3. Push the new httpd services to the registry.
 
 ```bash
-podman push quay.io/$QUAY_USER/demolab-database:latest && podman push quay.io/$QUAY_USER/demolab-database:rhel10
+podman push quay.io/$QUAY_USER/demolab-database:latest && podman push quay.io/$QUAY_USER/demolab-database:rhel10.0
 ```
 
 4. No we switch to the database VM, we will use our special ssh command to log into the VM.
