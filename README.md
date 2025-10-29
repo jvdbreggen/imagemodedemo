@@ -13,6 +13,8 @@ Then we will create a new RHEL 10 base image which we will use to upgrade the ht
 
 ## The Build
 
+The registry that we use will be Red Hat Quay, and throughout the instructions we will be referring to will be `quay.io\$QUAY_USER` where `$QUAY_USER` is a variable to store your Quay userid. If you have your own registry or have access to your corporate registry we highly recommend that you use it, as this will be the closest to your environment when you start to build your own images.
+
 The first build will be on RHEL 9.6 where we build a base `demolab-rhel:9.6` image. We then build a second pair of images for our specific services, the httpd and mariadb services. Now we can deploy these services images to Virtual Machines. We then create a new homepage image that has more details on Image Mode, and use the `bootc switch` command to update our VM to the latest home page.
 
 ```mermaid
@@ -240,12 +242,14 @@ An alternative is to create a vanilla base image with only our login user in the
 ### Set the environment
 
 Setup of the terminal for building Image Mode images that we are going to push to the registry.
-In this workshop we will be pushing to Red Hat Quay.
+
+In this workshop we will be pushing to **Red Hat Quay**, but if you have your own registry, or have access to a corporate registry we highly recommend using those registries as you can then continue using these to build your own RHEL images going forward.
 
 We recommend that you set two variables in the terminal you are using for the logins to the Red Hat Registry and Quay.io.
 
 Using Quay we recommend that when you push the images to Quay that you make the repositories *public* by selecting the repository and using the Actions to set *Make Public*
-Replace `$QUAY_PASSWORD` and `REDHAT_PASSWORD` with your passowrds. If you decide to use these variables, we recommend you hash encrypt the passwords in the variables.
+Update the variables QUAY_USER and REDHAT_USER with your Quay and Red Hat account userids. They may be the same if you use your Red Hat account.
+Replace `$QUAY_PASSWORD` and `$REDHAT_PASSWORD` with your passwords. If you decide to use these variables, we recommend you hash encrypt the passwords in the variables.
 
 ```bash
 QUAY_USER="your quay.io username not the email address"
