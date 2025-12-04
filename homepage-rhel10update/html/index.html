@@ -1,107 +1,119 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>Red Hat</title>
+<head>
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>RHEL 10 Image Mode Demo</title>
+</head>
+<body>
+    <p style="text-align: center;"><img src="images/banner-platform-rhel.png" alt="Red Hat 10 Banner" width=100% height="150px"/></p>
+    <div><h2 style="text-align: center;"><span style="color: red;">Red Hat Enterprise Linux 10</h2>
+        <h1 style="text-align: center;">Image mode for Red&nbsp;Hat&nbsp;Enterprise&nbsp;Linux</h1>
+    </div>
+    <!-- <h1><span style="color: black;"><br />Welcome to the <span style="background-color: yellow;">first</span> deployment of the <span style="color: red;">RHEL 10</span> Base Image in Image Mode for RHEL.</span></h1> -->
+    
+    <p>Image mode for Red Hat® Enterprise Linux® is a simple, consistent approach to building, deploying, and managing the operating system (OS) using container technologies.</p><p>Now available on Red Hat Enterprise Linux 9.6 and 10.</p>
+    
+    <p style="text-align: center;"><span style="color: black;"><img src="rhel10.png" alt="RHEL9 Logo" width="96" height="96" /></span></p>
+    <p/>
+    
+    <div style="text-align: center;"><h2>Contain drift. Accelerate delivery.</h2></div>
 
-        <meta charset="utf-8" />
+    <div>&nbsp;Image mode for Red Hat Enterprise Linux enables you to manage your OS with the same container tools and workflows as applications, creating a consistent experience and common language across teams.<img src="/rhdc/managed-files/rhel10-story-bg-v3-2000x477.png" alt="" /></div>
+    <table>
+        <tbody>
+            <tr>
+                <td>
+                    <h2>Limit drift and anomalies</h2>
+                    <p dir="ltr">Image mode addresses the&nbsp;<a href="https://developers.redhat.com/articles/2025/02/25/how-image-mode-rhel-improves-security#minimize_drift">challenge of drift</a> by helping keep your servers&rsquo; configurations the same, eliminating deviations that can lead to system instability and security risks.&nbsp;</p>
+                    <p dir="ltr">With image-level updates, changes can be deployed, even across major releases, or rolled back without using external snapshots should issues arise. Together, this results in less time spent troubleshooting anomalies and shorter maintenance windows.</p>
+                </td>
+                <td>
+                    <div>&nbsp;</div>
+                    <div><img src="images/rhel10-subpage-image-mode-story1-v4-385x436.png" alt="RHEL Lightspeed" width="385" height="436" /></div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div><img src="images/rhel10-subpage-image-mode-story2-v2-390x357.png" alt="RHEL Lightspeed" width="428" height="329" /></div>
+                </td>
+                <td>
+                    <h2>Reduce time to market</h2>
+                    <p dir="ltr">Deliver faster solutions using DevOps and continuous integration/continuous delivery (CI/CD), which now includes the OS.&nbsp;</p>
+                    <p dir="ltr"><strong>With image mode, you can:</strong></p>
+                    <ul>
+                        <li dir="ltr">Start with a&nbsp;<a href="https://catalog.redhat.com/search?gs=&amp;q=bootc&amp;searchType=containers">bootc base image</a>, which includes the kernel, bootloader, and other items that are typically excluded from application containers.</li>
+                        <li dir="ltr">Add any software or dependency to your bootc base image before you build and push it to the registry.</li>
+                        <li dir="ltr">Test images in advance by moving to more robust tooling within your CI/CD pipelines.</li>
+                        <li dir="ltr">Build anywhere with standard Open Container Initiative (OCI) tools and registries, including&nbsp;<a title="What is Podman Desktop?" href="/en/topics/containers/what-is-podman-desktop" data-entity-type="node" data-entity-uuid="6c12217c-9df8-457a-a930-51a035b34aae" data-entity-substitution="canonical">Podman Desktop</a>.</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h2>Boost your security capabilities</h2>
+                    <p dir="ltr">Combining read-only system software with read-write configuration directories,&nbsp;<a href="https://developers.redhat.com/articles/2025/02/25/how-image-mode-rhel-improves-security#an_immutable_os_increases_security">image mode reduces the attack surface of the OS</a>. With image mode, you can use container-oriented security tools all the way down at the OS level. Registry scanning and container signing now extends to cover both applications and the OS. Base images also include a software bill of materials (SBOM) to help users track and enhance their software supply chain across their environment.&nbsp;</p>
+                    <p dir="ltr">Regardless of how you choose to build your image, image mode can help you simplify your compliance requirements by applying the same security hardening profiles (including STIG, PCI, and CIS) across your Red Hat Enterprise Linux systems.&nbsp;</p>
+                </td>
+                <td><img src="images/rhel10-subpage-image-mode-story3-v2-441x345.png" alt="Image mode security" width="441" height="345" /></td>
+            </tr>
+            <tr>
+                <td>
+                    <div><img src="images/rhel10-subpage-image-mode-story4-v3-378x436.png" alt="Image mode simplify appliance creation" width="378" height="436" /></div>
+                </td>
+                <td>&nbsp;
+                    <h2>Simplify appliance creation</h2>
+                    <p>Image mode lets you easily combine your OS with whatever applications and drivers you want for faster development and delivery. You can put your entire solution in a container, regardless of it running on a dedicated piece of hardware, cloud provider, or a virtual machine (VM). Image mode will also work even if your application already uses containers or isn&rsquo;t container-friendly. This means you can spend more time on developing your solution rather than last minute OS integration.</p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 
-        <link rel="shortcut icon" href="images/favicon.ico" />
-        <link rel="stylesheet" media="all" href="styles.css" />
+    <h2 class="rh-band-header-headline">A new approach to deploying the OS</h2>
+    <p>The choice is yours with Red Hat Enterprise Linux 10. Image mode is a different method for deploying Red Hat Enterprise Linux, while package mode is the familiar install that has powered the enterprise for decades. Red Hat Enterprise Linux empowers organisations to select the approach that best suits their specific workloads and organisational needs.</p>
+    <table style="width: 100%;" border="1">
+        <tbody>
+            <tr>
+                <th>&nbsp;</th>
+                <th>Package mode</th>
+                <th>Image mode</th>
+            </tr>
+            <tr>
+                <th>Build</th>
+                <td>Image builder</td>
+                <td>Container tools</td>
+            </tr>
+            <tr>
+                <th>Update</th>
+                <td>Packages (dnf)</td>
+                <td>Images (bootc)</td>
+            </tr>
+            <tr>
+                <th>Distribute</th>
+                <td>rpm repository</td>
+                <td>Container registry</td>
+            </tr>
+            <tr>
+                <th>Change</th>
+                <td>Run time (dnf)</td>
+                <td>Build time</td>
+            </tr>
+            <tr>
+                <th>Manage</th>
+                <td colspan="2">Red Hat Lightspeed (formerly Red Hat Insights), Red Hat Satellite, and Red Hat Ansible&reg; Automation Platform</td>
+            </tr>
+            <tr>
+                <th>Deploy</th>
+                <td colspan="2">Bare metal, VM, cloud, edge</td>
+            </tr>
+        </tbody>
+    </table>
 
-    </head>
+    <p style="text-align: center;"><span style="color: black;"><img src="rhel.png" alt="RHEL EL Logo" width="96" height="96" /></span></p>
+    <p/>
 
-    <body>
-
-        <div class="container">
-            
-            <div class="row">
-
-                <div class="col-md-8 col-md-offset-2">
-                    <div class="header-graphic v3-banner platform-banner rhel-banner" role="banner">
-                     <!--   <div class="graphic-inner">
-                            <div class="graphic-inner2">
-                                <div class="banner-title"><span>Red Hat<sup>&reg;</sup> </span>Enterprise Linux<sup>&reg;</sup> 10</div>
-			    </div>
-		     </div> -->
-                    </div>
-
-                    <article id="content" role="main">
-
-                        <header>
-                            <h1>Red Hat Enterprise Linux 10</h1>
-                            <h2>Red Hat Enterprise Linux 10 delivers bold innovation to bridge IT skills gaps, boost build-time decisions, reduce drift, defend against threats from quantum computing and power success as a trusted foundation for AI. Some of the new features include:</h2>
-                        </header>
-
-                        <h3>Red Hat Enterprise Linux Lightspeed</h3>
-                        <ul>
-                            <li>Enhances the usability of Red Hat Enterprise Linux with intelligent, proactive AI guidance and recommendations.</li>
-                            <li>Includes a command-line assistant powered by generative AI (gen AI) to troubleshoot, answer questions, and parse logs, all while using natural language prompts.</li>
-                            <li>Recommends relevant packages during image creation to enhance system utility.</li>
-                        </ul>
-
-                        <h3>Red Hat Insights for RHEL planning</h3>
-                        <ul>
-                            <li>Red Hat Insights for RHEL planning centralizes roadmap and lifecycle details for AppStreams and Red Hat Enterprise Linux minor releases, tailoring the view to the current state of inventoried systems. This helps organizations anticipate operating system (OS) feature releases.</li>
-                            <li>Provides roadmap visibility and proactive package guidance for upcoming versions.</li>
-                        </ul>
-                        <h3>Image mode for Red Hat Enterprise Linux</h3>
-                        <ul>
-                            <li>Streamlines OS management using container workflows.</li>
-                            <li>Offers bootc image customization from scratch.</li>
-                            <li>Compliance hardening (including STIG, PCI, CIS).</li>
-                        </ul>
-                        <h3>Post-quantum cryptography</h3>
-                        <ul>
-                            <li>Introduces quantum-resistant algorithms for key exchange.</li>
-                        </ul>
-                        <h3>Developer tools</h3>
-                        <ul>
-                            <li>New versions: PHP 8.3, NGINX 1.26, Git 2.47, Maven 3.9, and MySQL 8.4.</li>
-                            <li>Expanded support for Redis, Valkey, and new password/authentication options.</li>
-                            <li>Microsoft Windows Subsystem (WSL) can now run a Red Hat Enterprise Linux development environment on Windows without having to spin up a traditional virtual machine (VM).</li>
-			    <li>Introduces Red Hat Enterprise Linux 10 Developer Preview for SiFive HiFive Premier P550 platform.</li>
-                        </ul>
-
-
-                        <section>
-                            <h3>Where to go from here:</h3>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <ul>
-                                        <li>
-                                            <h4><a href="https://access.redhat.com/products/red-hat-enterprise-linux/">Red Hat Enterprise Linux Product Page</a></h4>
-                                            <p>The landing page for Red Hat Enterprise Linux information. Learn how to plan, deploy, maintain, and troubleshoot your Red Hat Enterprise Linux system.</p>
-                                        </li>
-                                        <li>
-                                            <h4><a href="https://access.redhat.com/">Red Hat Customer Portal</a></h4>
-                                            <p>Your central access point to finding articles, videos, and other Red Hat content, as well as managing your Red Hat support cases.</p>
-                                        </li>
-                                    </ul>
-                                </div>
-                                <div class="col-md-6">
-                                    <ul>
-                                        <li>
-                                            <h4><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/">Product Documentation</a></h4>
-                                            <p>Provides documentation related to Red Hat Enterprise Linux and other Red Hat offerings.</p>
-                                        </li>
-<!--                                        <li>
-                                            <h4><a href="https://access.redhat.com/management/">Red Hat Subscription Management</a></h4>
-                                            <p>Web-based administration interface to efficiently manage systems. Requires a Red Hat account.</p>
-                                        </li>
-                                        <li>
-                                            <h4><a href="https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux">Red Hat Enterprise Linux Product Page</a></h4>
-					    <p>Provides an entry point to Red Hat Enterprise Linux product offerings.</p> -->
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </section>
-
-                    </article>
-                </div>
-            </div>
-        </div>
-
-    </body>
+    <footer>
+        <p>&copy; 2025 Red Hat, Inc. All rights reserved.</p>
+    </footer>
+</body>
 </html>
